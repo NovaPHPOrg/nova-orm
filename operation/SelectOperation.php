@@ -29,17 +29,7 @@ class SelectOperation extends BaseOperation
      */
     private ?Page $page;//开启分页的分页数据
 
-    private bool $cache = true;
 
-    /**
-     * 是否禁止使用缓存
-     * @return $this
-     */
-    public function noCache($nocache = true): SelectOperation
-    {
-        $this->cache = !$nocache;
-        return $this;
-    }
 
     /**
      * 初始化
@@ -171,7 +161,7 @@ class SelectOperation extends BaseOperation
             $this->page = new Page($page);
         }
 
-        $result = parent::__commit(true, $this->cache);
+        $result = parent::__commit(true);
         if ($object && $this->model !== null) {
             return $this->translate2Model($this->model, $result);
         } else {
@@ -258,7 +248,7 @@ class SelectOperation extends BaseOperation
     public function sum(array $conditions, string $param): mixed
     {
         if (!Field::isName($param)) {
-            throw new DbFieldError("Disallowed field name => $param", $string);
+            throw new DbFieldError("Disallowed field name => $param");
         }
         if (!empty($conditions)) $this->where($conditions);
 

@@ -314,10 +314,10 @@ abstract class Dao
      * @param array $condition 查询条件
      * @return mixed|null
      */
-    protected function find(Field $field = null, array $condition = [], $nocache = true): mixed
+    protected function find(Field $field = null, array $condition = []): mixed
     {
         if ($field === null) $field = new Field();
-        $result = $this->select($field)->where($condition)->limit()->noCache($nocache)->commit();
+        $result = $this->select($field)->where($condition)->limit()->commit();
         if (!empty($result)) {
             return $result[0];
         }

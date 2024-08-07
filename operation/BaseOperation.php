@@ -16,6 +16,7 @@ namespace nova\plugin\orm\operation;
 
 
 
+use nova\framework\cache\Cache;
 use nova\plugin\orm\Db;
 use nova\plugin\orm\exception\DbExecuteError;
 use nova\plugin\orm\exception\DbFieldError;
@@ -75,8 +76,47 @@ abstract class BaseOperation
     protected function __commit($readonly = false): int|array
     {
         if ($this->transferSql == null) $this->translateSql();
-        return $this->db->execute($this->transferSql, $this->bind_param, $readonly);
+
+        $cache = new Cache();
+        $tableKey = md5($this->getTable());
+        $key = $this->getCacheKey();
+        $result = null;
+        if ($readonly){
+            //尝试从缓存中获取数据
+            $result = $cache->get($tableKey.$key);
+        }
+
+        if(empty($result)){
+            $result = $this->db->execute($this->transferSql, $this->bind_param, $readonly);
+            if ($readonly) {
+                //将数据存入缓存
+                $cache->set($tableKey.$key, $result, 300); //缓存5分钟
+            }else{
+                //清空缓存
+               $cache->deleteKeyStartWith($tableKey);
+            }
+        }
+
+        return $result;
     }
+
+    private function getCacheKey()
+    {
+        $key = md5($this->transferSql);
+        $key.= md5(json_encode($this->bind_param));
+        return md5($key);
+    }
+
+    /**
+     * 获取表名
+     * @return string
+     */
+
+    private function getTable(): string
+    {
+        return $this->opt['table_name'];
+    }
+
 
     /**
      * 编译sql语句
