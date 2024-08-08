@@ -50,7 +50,7 @@ class Field
     public function toString(): string
     {
         if (empty($this->fields)) return "*";
-        return implode(",", $this->fields);
+        return "`".implode("`,`", $this->fields)."`";
     }
 
     /**
