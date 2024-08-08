@@ -83,17 +83,17 @@ abstract class BaseOperation
         $result = null;
         if ($readonly){
             //尝试从缓存中获取数据
-            $result = $cache->get($tableKey.$key);
+            $result = $cache->get("sql/$tableKey/$key");
         }
 
         if(empty($result)){
             $result = $this->db->execute($this->transferSql, $this->bind_param, $readonly);
             if ($readonly) {
                 //将数据存入缓存
-                $cache->set($tableKey.$key, $result, 300); //缓存5分钟
+                $cache->set("sql/$tableKey/$key", $result, 300); //缓存5分钟
             }else{
                 //清空缓存
-               $cache->deleteKeyStartWith($tableKey);
+               $cache->deleteKeyStartWith("sql/$tableKey");
             }
         }
 
