@@ -222,6 +222,7 @@ abstract class BaseOperation
 
     /**
      * 将数据集转换为对象
+     * @throws DbExecuteError
      */
     protected function translate2Model(string $model, array $data): ?array
     {

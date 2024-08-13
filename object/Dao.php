@@ -18,6 +18,7 @@ use nova\framework\cache\Cache;
 use nova\framework\exception\AppExitException;
 use nova\plugin\orm\Db;
 use nova\plugin\orm\exception\DbExecuteError;
+use nova\plugin\orm\exception\DbFieldError;
 use nova\plugin\orm\operation\DeleteOperation;
 use nova\plugin\orm\operation\InsertOperation;
 use nova\plugin\orm\operation\SelectOperation;
@@ -352,21 +353,38 @@ abstract class Dao
      * 获取所有数据
      * @param array|null $fields
      * @param array $where
-     * @param bool $object
      * @param int|null $start
      * @param int $size
-     * @param null $page
+     * @param bool $page
      * @param string $orderBy
-     * @return int|array
+     * @return array
+     * @throws DbExecuteError
+     * @throws DbFieldError
      */
-    function getAll(?array $fields = [], array $where = [], bool $object = true, ?int $start = null, int $size = 10, &$page = null, $orderBy = ""): int|array
+    function getAll(?array $fields = [], array $where = [], ?int $start = null, int $size = 10, bool $page = false, string $orderBy = ""): array
     {
+        $ret = [
+            "data" => [],
+        ];
+        $total = 0;
         if ($fields === null) $fields = [];
-        if ($start === null) return $this->select(...$fields)->where($where)->commit($object);
-        if (!empty($orderBy)) {
-            return $this->select(...$fields)->page($start, $size, 10, $page)->where($where)->orderBy($orderBy)->commit($object);
+        if ($start === null) {
+            $result =  $this->select(...$fields)->where($where)->commit();
+        }else if (!empty($orderBy)) {
+            $result =  $this->select(...$fields)->page($start, $size)->where($where)->orderBy($orderBy)->commit($total);
+        }else{
+            $result =  $this->select(...$fields)->page($start, $size)->where($where)->commit($total);
         }
-        return $this->select(...$fields)->page($start, $size, 10, $page)->where($where)->commit($object);
+        $ret['total'] = $total;
+        if($page){
+            array_walk($result, function (&$value, $key, $arr) {
+                $arr['ret']['data'][] = $value->toArray();
+            }, ['ret' => &$ret]);
+        }else{
+            $ret['data'] = $result;
+        }
+        return $ret;
+
     }
 
 

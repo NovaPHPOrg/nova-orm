@@ -16,6 +16,7 @@ namespace nova\plugin\orm\operation;
 
 use Exception;
 use nova\plugin\orm\Db;
+use nova\plugin\orm\exception\DbExecuteError;
 use nova\plugin\orm\exception\DbFieldError;
 use nova\plugin\orm\object\Field;
 use nova\plugin\orm\object\Page;
@@ -24,11 +25,6 @@ class SelectOperation extends BaseOperation
 {
     const SORT_DESC = "DESC";
     const SORT_ASC = "ASC";
-    /**
-     * @var Page|null
-     */
-    private ?Page $page;//开启分页的分页数据
-
 
 
     /**
@@ -104,32 +100,27 @@ class SelectOperation extends BaseOperation
      * 分页
      * @param int $start 开始
      * @param int $count 数量
-     * @param int $range 最多分页
      * @return $this
      */
-    public function page(int $start = 1, int $count = 10, int $range = 10, &$page = null): SelectOperation
+    public function page( int $start = 1, int $count = 10): SelectOperation
     {
         unset($this->opt['limit']);
         $this->opt['page'] = true;
         $this->opt['start'] = $start;
         $this->opt['count'] = $count;
-        $this->opt['range'] = $range;
-        $this->page = &$page;
         return $this;
     }
 
     /**
      * 提交
      * @return array|int
+     * @throws DbExecuteError
      */
-    public function commit($object = true)
+    public function commit(int &$total = 0)
     {
 
-        if ($object && str_contains($this->opt["table_name"], ",")) {
-            $object = false;
-        }
 
-        if (isset($this->opt['start']) && isset($this->opt['count']) && isset($this->opt['range'])) {
+        if (isset($this->opt['start']) && isset($this->opt['count'])) {
             $sql = 'SELECT COUNT(*) as M_COUNTER ';
             $sql .= $this->getOpt('FROM', 'table_name');
             $sql .= $this->getOpt('WHERE', 'where');
@@ -140,80 +131,26 @@ class SelectOperation extends BaseOperation
                 $total = $this->db->execute($sql, $this->bind_param, true)[0]['M_COUNTER'];
             } catch (Exception $e) {
                 $total = 0;
-
             }
-
-
-            if (!isset($this->opt['start'])) {
-                $this->opt['start'] = 0;
-                $this->opt['count'] = 10;
-                $this->opt['range'] = 10;
-            }
-            $page = $this->pager($this->opt['start'], $this->opt['count'], $this->opt['range'], $total);
+            $offset = ($this->opt['start'] - 1) * $this->opt['count'];
+            $limit = $this->opt['count'];
 
             if (!empty($page)) {
-                if ($page['offset'] < 0) {
-                    $page['offset'] = 0;
+                if ($offset < 0) {
+                    $offset = 0;
                 }
-                $this->opt['limit'] = $page['offset'] . ',' . $page['limit'];
+                $this->opt['limit'] = $offset . ',' . $limit;
             }
-
-            $this->page = new Page($page);
         }
 
         $result = parent::__commit(true);
-        if ($object && $this->model !== null) {
+        if ($this->model !== null) {
             return $this->translate2Model($this->model, $result);
         } else {
             return $result;
         }
 
     }
-
-    /**
-     * 分页函数
-     * @param int $page 起始页
-     * @param int $page_size 一页的数量
-     * @param int $scope 最多分页数量
-     * @param int $total 总量
-     * @return array|null
-     */
-    private function pager(int $page, int $page_size = 10, int $scope = 10, int $total = 0): ?array
-    {
-        $page_array = [
-            'total_count' => $total,//总数量
-            'page_size' => $page_size,//一页大小
-            'total_page' => 1,//总页数
-            'first_page' => 1,//第一页
-            'prev_page' => ((1 == $page) ? 1 : ($page - 1)),//上一页
-            'next_page' => (($page == 1) ? 1 : ($page + 1)),//下一页
-            'last_page' => 1,//最后一页
-            'current_page' => $page,//当前页
-            'all_pages' => [],//所有页
-            'offset' => ($page - 1) * $page_size,
-            'limit' => $page_size,
-        ];
-        if ($total > $page_size) {
-            $total_page = ceil($total / $page_size);
-            $page = min(intval(max($page, 1)), $total_page);
-            $page_array["total_page"] = $total_page;
-            $page_array["next_page"] = (($page == $total_page) ? $total_page : ($page + 1));//下一页
-            $page_array["last_page"] = $total_page;
-
-            if ($total_page <= $scope) {
-                $page_array['all_pages'] = range(1, $total_page);
-            } elseif ($page <= $scope / 2) {
-                $page_array['all_pages'] = range(1, $scope);
-            } elseif ($page <= $total_page - $scope / 2) {
-                $right = $page + (int)($scope / 2);
-                $page_array['all_pages'] = range($right - $scope + 1, $right);
-            } else {
-                $page_array['all_pages'] = range($total_page - $scope + 1, $total_page);
-            }
-        }
-        return $page_array;
-    }
-
     /**
      * 统计查出来的数据的总数
      * @param array $conditions 统计条件
