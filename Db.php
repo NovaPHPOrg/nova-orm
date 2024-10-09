@@ -27,6 +27,7 @@ use nova\plugin\orm\object\Model;
 use PDO;
 use PDOException;
 use PDOStatement;
+use function nova\framework\config;
 
 class Db
 {
@@ -65,7 +66,7 @@ class Db
     public static function getInstance(?DbFile $dbFile = null): Db
     {
         if ($dbFile === null) {
-            $dbFile = new DbFile($GLOBALS['__nova_app_config__']['db']);
+            $dbFile = new DbFile(config('db'));
         }
 
         $hash = $dbFile->hash();
