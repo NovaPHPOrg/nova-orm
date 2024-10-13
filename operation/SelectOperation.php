@@ -19,7 +19,6 @@ use nova\plugin\orm\Db;
 use nova\plugin\orm\exception\DbExecuteError;
 use nova\plugin\orm\exception\DbFieldError;
 use nova\plugin\orm\object\Field;
-use nova\plugin\orm\object\Page;
 
 class SelectOperation extends BaseOperation
 {
@@ -119,7 +118,6 @@ class SelectOperation extends BaseOperation
     public function commit(int &$total = 0)
     {
 
-
         if (isset($this->opt['start']) && isset($this->opt['count'])) {
             $sql = 'SELECT COUNT(*) as M_COUNTER ';
             $sql .= $this->getOpt('FROM', 'table_name');
@@ -135,12 +133,10 @@ class SelectOperation extends BaseOperation
             $offset = ($this->opt['start'] - 1) * $this->opt['count'];
             $limit = $this->opt['count'];
 
-            if (!empty($page)) {
-                if ($offset < 0) {
-                    $offset = 0;
-                }
-                $this->opt['limit'] = $offset . ',' . $limit;
+            if ($offset < 0) {
+                $offset = 0;
             }
+            $this->opt['limit'] = $offset . ',' . $limit;
         }
 
         $result = parent::__commit(true);

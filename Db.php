@@ -102,6 +102,7 @@ class Db
      * @param array $params 绑定的sql参数
      * @param false $readonly 是否为查询
      * @return array|int
+     * @throws DbExecuteError
      */
     public function execute(string $sql, array $params = [], bool $readonly = false): int|array
     {
@@ -113,7 +114,6 @@ class Db
 
         $connect = $this->db->getDbConnect();
 
-        Logger::info("SQL => ". $sql);
 
         $sth = $connect->prepare($sql);
 
@@ -152,12 +152,6 @@ class Db
         }
         if (App::getInstance()->debug) {
             $end = microtime(true) - $GLOBALS["__nova_db_sql_start__"];
-            $sql_default = $sql;
-            $params = array_reverse($params);
-            foreach ($params as $k => $v) {
-                $sql_default = str_replace($k, "\"$v\"", $sql_default);
-            }
-            Logger::info("sql real run => ". $sql_default);
             $t = round($end * 1000, 4);
             Logger::info("sql run time => ". $t . "ms");
         }
@@ -170,6 +164,7 @@ class Db
             $sql
         );
     }
+
 
     private function highlightSQL($sql): string
     {

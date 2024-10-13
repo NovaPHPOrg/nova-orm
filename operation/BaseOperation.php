@@ -17,6 +17,7 @@ namespace nova\plugin\orm\operation;
 
 
 use nova\framework\cache\Cache;
+use nova\framework\log\Logger;
 use nova\plugin\orm\Db;
 use nova\plugin\orm\exception\DbExecuteError;
 use nova\plugin\orm\exception\DbFieldError;
@@ -25,6 +26,8 @@ abstract class BaseOperation
 {
     protected array $opt = [];//封装常见的数据库查询选项
     protected ?string $transferSql = null;//编译完成的sql语句
+
+    private string $buildSql = "";//构建的sql语句
     protected array $bind_param = [];//绑定的参数列表
 
     protected Db $db;
@@ -68,15 +71,32 @@ abstract class BaseOperation
         return $this;
     }
 
+    private function buildRunSQL($sql, $params): string
+    {
+        $sql_default = $sql;
+        $params = array_reverse($params);
+        foreach ($params as $k => $v) {
+            $sql_default = match (gettype($v)) {
+                "double", "boolean", "integer" => str_replace($k, $v, $sql_default),
+                "NULL" => str_replace($k, "NULL", $sql_default),
+                default => str_replace($k, "'$v'", $sql_default),
+            };
+
+        }
+        return $sql_default;
+    }
+
     /**
      *
      * 提交
      * @return array|int
+     * @throws DbExecuteError
      */
     protected function __commit($readonly = false): int|array
     {
         if ($this->transferSql == null) $this->translateSql();
-
+        $this->buildSql = $this->buildRunSQL($this->transferSql, $this->bind_param);
+        Logger::info("SQL: $this->buildSql");
         $cache = new Cache();
         $tableKey = md5($this->getTable());
         $key = $this->getCacheKey();
@@ -87,6 +107,7 @@ abstract class BaseOperation
         }
 
         if(empty($result)){
+
             $result = $this->db->execute($this->transferSql, $this->bind_param, $readonly);
             if ($readonly) {
                 //将数据存入缓存
@@ -102,9 +123,7 @@ abstract class BaseOperation
 
     private function getCacheKey()
     {
-        $key = md5($this->transferSql);
-        $key.= md5(json_encode($this->bind_param));
-        return md5($key);
+        return md5($this->buildSql);
     }
 
     /**
