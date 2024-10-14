@@ -356,12 +356,12 @@ abstract class Dao
      * @param int|null $start
      * @param int $size
      * @param bool $page
-     * @param string $orderBy
+     * @param array|string|null $orderBy
      * @return array
      * @throws DbExecuteError
      * @throws DbFieldError
      */
-    function getAll(?array $fields = [], array $where = [], ?int $start = null, int $size = 10, bool $page = false, string $orderBy = ""): array
+    function getAll(?array $fields = [], array $where = [], ?int $start = null, int $size = 10, bool $page = false, array|string $orderBy = null): array
     {
         $ret = [
             "data" => [],
@@ -371,7 +371,15 @@ abstract class Dao
         if ($start === null) {
             $result =  $this->select(...$fields)->where($where)->commit();
         }else if (!empty($orderBy)) {
-            $result =  $this->select(...$fields)->page($start, $size)->where($where)->orderBy($orderBy)->commit($total);
+            $select = $this->select(...$fields)->page($start, $size)->where($where);
+            if (is_array($orderBy)) {
+                foreach ($orderBy as $value) {
+                    $select->orderBy($value);
+                }
+            } else {
+                $select->orderBy($orderBy);
+            }
+            $result = $select->commit($total);
         }else{
             $result =  $this->select(...$fields)->page($start, $size)->where($where)->commit($total);
         }
