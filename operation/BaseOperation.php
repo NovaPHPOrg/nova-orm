@@ -89,14 +89,15 @@ abstract class BaseOperation
     /**
      *
      * 提交
+     * @param bool $readonly
      * @return array|int
      * @throws DbExecuteError
      */
-    protected function __commit($readonly = false): int|array
+    protected function __commit(bool $readonly = false): int|array
     {
         if ($this->transferSql == null) $this->translateSql();
         $this->buildSql = $this->buildRunSQL($this->transferSql, $this->bind_param);
-        Logger::info("SQL: $this->buildSql");
+
         $cache = new Cache();
         $tableKey = md5($this->getTable());
         $key = $this->getCacheKey();
@@ -107,7 +108,7 @@ abstract class BaseOperation
         }
 
         if(empty($result)){
-
+            Logger::info("SQL: $this->buildSql");
             $result = $this->db->execute($this->transferSql, $this->bind_param, $readonly);
             if ($readonly) {
                 //将数据存入缓存

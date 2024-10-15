@@ -37,6 +37,7 @@ class Db
     /**
      * 构造函数
      * @param DbFile $dbFile 数据库配置类
+     * @throws AppExitException
      */
     public function __construct(DbFile $dbFile)
     {
@@ -62,6 +63,7 @@ class Db
      * 使用指定数据库配置初始化数据库连接
      * @param DbFile|null $dbFile
      * @return Db
+     * @throws AppExitException
      */
     public static function getInstance(?DbFile $dbFile = null): Db
     {
@@ -182,7 +184,7 @@ class Db
         );
 
         // 定义正则表达式模式
-        $pattern = '/\b(' . implode('|', $keywords) . ')\b|(\'[^\']*\'|"[^"]*")|\b(\d+)\b|(:[\w]+)|(`[\w]+`)|(--.*)/i';
+        $pattern = '/\b(' . implode('|', $keywords) . ')\b|(\'[^\']*\'|"[^"]*")|\b(\d+)\b|(:[\w]+)|(`\w+`)|(--.*)/i';
 
         // 替换操作
         return preg_replace_callback($pattern, function ($matches) {
@@ -263,6 +265,7 @@ class Db
      * @param ?string $output 输出路径
      * @param bool $only_struct 是否只导出结构
      * @return string
+     * @throws DbExecuteError
      */
     public function export(string $output = null, bool $only_struct = false): string
     {

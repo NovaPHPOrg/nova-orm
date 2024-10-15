@@ -29,6 +29,7 @@ class SelectOperation extends BaseOperation
     /**
      * 初始化
      * @param mixed ...$field 需要的字段
+     * @throws DbFieldError
      */
     public function __construct(Db &$db, $m, ...$field)
     {
@@ -200,7 +201,7 @@ class SelectOperation extends BaseOperation
      * 去重
      * @return $this
      */
-    public function distinct()
+    public function distinct(): static
     {
         $this->opt['distinct'] = "DISTINCT";
         return $this;
