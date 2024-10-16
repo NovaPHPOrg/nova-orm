@@ -366,6 +366,7 @@ abstract class Dao
         $ret = [
             "data" => [],
         ];
+        if ($size > 1000) $size = 1000;
         $total = 0;
         if ($fields === null) $fields = [];
         if ($start === null) {
