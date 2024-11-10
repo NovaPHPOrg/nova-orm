@@ -14,6 +14,7 @@
 
 namespace nova\plugin\orm\object;
 
+use nova\framework\App;
 use nova\framework\cache\Cache;
 use nova\framework\exception\AppExitException;
 use nova\plugin\orm\Db;
@@ -51,7 +52,7 @@ abstract class Dao
                 $this->model = $class;
                 $table = $this->getTable();
                 $key = "table_" . $table;
-                if($cache->get($key) == null){
+                if($cache->get($key) == null || App::getInstance()->debug){
                     try {
                         $result = $this->db->getDriver()->getDbConnect()->query(/** @lang text */ "SELECT count(*) FROM `{$table}` LIMIT 1");
                         $table_exist = $result instanceof PDOStatement && ($result->rowCount() === 1);
