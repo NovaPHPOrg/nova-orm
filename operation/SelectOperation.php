@@ -113,10 +113,12 @@ class SelectOperation extends BaseOperation
 
     /**
      * 提交
+     * @param int $total
+     * @param bool $object
      * @return array|int
      * @throws DbExecuteError
      */
-    public function commit(int &$total = 0)
+    public function commit(int &$total = 0,$object = true): array|int
     {
 
         if (isset($this->opt['start']) && isset($this->opt['count'])) {
@@ -141,6 +143,7 @@ class SelectOperation extends BaseOperation
         }
 
         $result = parent::__commit(true);
+        if (!$object)return $result;
         if ($this->model !== null) {
             return $this->translate2Model($this->model, $result);
         } else {
