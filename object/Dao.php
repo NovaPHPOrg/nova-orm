@@ -397,5 +397,17 @@ abstract class Dao
 
     }
 
+    /**
+     * 判断是否存在
+     * @param array $where
+     * @return bool
+     * @throws DbExecuteError
+     */
+    public function exists(array $where = []): bool
+    {
+        return $this->select(new Field("id"))->where($where)->limit()->commit() != null;
+    }
+
+
 
 }
