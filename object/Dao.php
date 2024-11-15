@@ -27,7 +27,6 @@ use nova\plugin\orm\operation\SelectOperation;
 use nova\plugin\orm\operation\UpdateOperation;
 use PDOStatement;
 use Throwable;
-use function nova\framework\dump;
 
 abstract class Dao
 {
@@ -54,7 +53,7 @@ abstract class Dao
                 $this->model = $class;
                 $table = $this->getTable();
                 $key = "table_" . $table;
-                if($cache->get($key) == null || App::getInstance()->debug){
+                if ($cache->get($key) == null || App::getInstance()->debug) {
                     try {
                         $result = $this->db->getDriver()->getDbConnect()->query(/** @lang text */ "SELECT count(*) FROM `{$table}` LIMIT 1");
                         $table_exist = $result instanceof PDOStatement && ($result->rowCount() === 1);
@@ -217,16 +216,25 @@ abstract class Dao
     /**
      * 插入模型
      * @param Model $model
+     * @param bool $autoUpdate 是否自动更新
      * @return int
      */
-    public function insertModel(Model $model): int
+    public function insertModel(Model $model, bool $autoUpdate = false): int
     {
         $primary = $this->getAutoPrimary($model);//自增主键不去赋值
+        $unique = $model->getUnique();
         $kv = $model->toArray();
         if ($primary !== null) {
             if (isset($kv[$primary])) unset($kv[$primary]);
         }
-        return (int)$this->insert()->keyValue($kv)->commit();
+        if (!$autoUpdate) return (int)$this->insert()->keyValue($kv)->commit();
+        else {
+
+            $kvKeys = array_keys($kv);
+            $kvKeys = array_diff($kvKeys, $unique);
+
+            return (int)$this->insert(InsertOperation::INSERT_DUPLICATE)->keyValue($kv, $kvKeys)->commit();
+        }
     }
 
     /**
@@ -378,8 +386,8 @@ abstract class Dao
         $total = 0;
         if ($fields === null) $fields = [];
         if ($start === null) {
-            $result =  $this->select(...$fields)->where($where)->commit();
-        }else if (!empty($orderBy)) {
+            $result = $this->select(...$fields)->where($where)->commit();
+        } else if (!empty($orderBy)) {
             $select = $this->select(...$fields)->page($start, $size)->where($where);
 
             if (is_array($orderBy)) {
@@ -391,16 +399,16 @@ abstract class Dao
             }
 
             $result = $select->commit($total);
-        }else{
-            $result =  $this->select(...$fields)->page($start, $size)->where($where)->commit($total);
+        } else {
+            $result = $this->select(...$fields)->page($start, $size)->where($where)->commit($total);
         }
 
         $ret['total'] = $total;
-        if($page){
+        if ($page) {
             array_walk($result, function (&$value, $key, $arr) {
                 $arr['ret']['data'][] = $value->toArray();
             }, ['ret' => &$ret]);
-        }else{
+        } else {
             $ret['data'] = $result;
         }
         return $ret;
@@ -417,7 +425,6 @@ abstract class Dao
     {
         return $this->select(new Field("id"))->where($where)->limit()->commit() != null;
     }
-
 
 
 }
