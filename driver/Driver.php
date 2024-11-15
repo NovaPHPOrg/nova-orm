@@ -60,7 +60,7 @@ abstract class Driver
     /**
      * 处理插入模式
      * @param $model int 从以下{@link InsertOperation::INSERT_NORMAL}、{@link InsertOperation::INSERT_DUPLICATE}、{@link InsertOperation::INSERT_IGNORE}数据中获取
-     * @return string
+     * @return int
      */
-    abstract function onInsertModel(int $model): string;
+    abstract function onInsertModel(int $model): int;
 }

@@ -27,6 +27,7 @@ use nova\plugin\orm\operation\SelectOperation;
 use nova\plugin\orm\operation\UpdateOperation;
 use PDOStatement;
 use Throwable;
+use function nova\framework\dump;
 
 abstract class Dao
 {
@@ -155,6 +156,7 @@ abstract class Dao
      * 查找
      * @param ...$field string|Field 需要查询的字段
      * @return SelectOperation
+     * @throws DbFieldError|DbExecuteError
      */
     protected function select(...$field): SelectOperation
     {
@@ -174,6 +176,7 @@ abstract class Dao
     /**
      * 删除当前表
      * @return array|int
+     * @throws DbExecuteError
      */
     public function dropTable(): int|array
     {
@@ -186,6 +189,7 @@ abstract class Dao
      * @param array $params 绑定的sql参数
      * @param false $readonly 是否为查询
      * @return array|int
+     * @throws DbExecuteError
      */
     protected function execute(string $sql, array $params = [], bool $readonly = false): int|array
     {
@@ -195,6 +199,7 @@ abstract class Dao
     /**
      * 清空当前表
      * @return array|int
+     * @throws DbExecuteError
      */
     public function emptyTable(): int|array
     {
@@ -221,7 +226,7 @@ abstract class Dao
         if ($primary !== null) {
             if (isset($kv[$primary])) unset($kv[$primary]);
         }
-        return $this->insert()->keyValue($kv)->commit();
+        return (int)$this->insert()->keyValue($kv)->commit();
     }
 
     /**
@@ -320,6 +325,7 @@ abstract class Dao
     protected function find(Field $field = null, array $condition = []): mixed
     {
         if ($field === null) $field = new Field();
+
         $result = $this->select($field)->where($condition)->limit()->commit();
         if (!empty($result)) {
             return $result[0];
@@ -361,7 +367,7 @@ abstract class Dao
      * @param array|string|null $orderBy
      * @return array
      * @throws DbExecuteError
-     * @throws DbFieldError
+     * @throws DbFieldError|AppExitException
      */
     function getAll(?array $fields = [], array $where = [], ?int $start = null, int $size = 10, bool $page = false, array|string $orderBy = null): array
     {
@@ -375,6 +381,7 @@ abstract class Dao
             $result =  $this->select(...$fields)->where($where)->commit();
         }else if (!empty($orderBy)) {
             $select = $this->select(...$fields)->page($start, $size)->where($where);
+
             if (is_array($orderBy)) {
                 foreach ($orderBy as $value) {
                     $select->orderBy($value);
@@ -382,10 +389,12 @@ abstract class Dao
             } else {
                 $select->orderBy($orderBy);
             }
+
             $result = $select->commit($total);
         }else{
             $result =  $this->select(...$fields)->page($start, $size)->where($where)->commit($total);
         }
+
         $ret['total'] = $total;
         if($page){
             array_walk($result, function (&$value, $key, $arr) {

@@ -129,7 +129,7 @@ class Mysql extends Driver
         return "TRUNCATE TABLE '$table';";
     }
 
-    function onInsertModel(int $model): string
+    function onInsertModel(int $model): int
     {
         return $model;
     }

@@ -22,6 +22,7 @@ use nova\framework\log\Logger;
 use nova\plugin\orm\Db;
 use nova\plugin\orm\exception\DbExecuteError;
 use nova\plugin\orm\exception\DbFieldError;
+use function nova\framework\dump;
 
 abstract class BaseOperation
 {
@@ -76,13 +77,13 @@ abstract class BaseOperation
     {
         $sql_default = $sql;
         $params = array_reverse($params);
+
         foreach ($params as $k => $v) {
             $sql_default = match (gettype($v)) {
-                "double", "boolean", "integer" => str_replace($k, $v, $sql_default),
+                "double", "boolean", "integer" => str_replace($k, strval($v), $sql_default),
                 "NULL" => str_replace($k, "NULL", $sql_default),
                 default => str_replace($k, "'$v'", $sql_default),
             };
-
         }
         return $sql_default;
     }
@@ -96,18 +97,20 @@ abstract class BaseOperation
      */
     protected function __commit(bool $readonly = false): int|array
     {
+
         if ($this->transferSql == null) $this->translateSql();
+
         $this->buildSql = $this->buildRunSQL($this->transferSql, $this->bind_param);
 
         $cache = new Cache();
         $tableKey = md5($this->getTable());
         $key = $this->getCacheKey();
         $result = null;
+
         if ($readonly){
             //尝试从缓存中获取数据
             $result = $cache->get("sql/$tableKey/$key");
         }
-
         if(empty($result)){
             Logger::info("SQL: $this->buildSql");
             $result = $this->db->execute($this->transferSql, $this->bind_param, $readonly);

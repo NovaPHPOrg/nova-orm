@@ -105,6 +105,7 @@ class SelectOperation extends BaseOperation
      */
     public function page( int $start = 1, int $count = 10): SelectOperation
     {
+
         unset($this->opt['limit']);
         $this->opt['page'] = true;
         $this->opt['start'] = $start;
@@ -119,7 +120,7 @@ class SelectOperation extends BaseOperation
      * @return array|int
      * @throws DbExecuteError
      */
-    public function commit(int &$total = 0,$object = true): array|int
+    public function commit(int &$total = 0, bool $object = true): array|int
     {
 
         if (isset($this->opt['start']) && isset($this->opt['count'])) {
@@ -144,18 +145,22 @@ class SelectOperation extends BaseOperation
         }
 
         $result = parent::__commit(true);
+
         if (!$object)return $result;
         if ($this->model !== null) {
+
             return $this->translate2Model($this->model, $result);
         } else {
             return $result;
         }
 
     }
+
     /**
      * 统计查出来的数据的总数
      * @param array $conditions 统计条件
-     * @return int|mixed
+     * @return int
+     * @throws DbExecuteError|DbFieldError
      */
     public function count(array $conditions): mixed
     {
@@ -164,13 +169,14 @@ class SelectOperation extends BaseOperation
             "SELECT COUNT(*) AS M_COUNTER FROM " . $this->opt['table_name'] . "  " . (empty($conditions) ? '' : 'where ' . $this->opt['where']);
         $this->transferSql = $sql;
         $count = $this->__commit(true);
-        return isset($count[0]['M_COUNTER']) && $count[0]['M_COUNTER'] ? $count[0]['M_COUNTER'] : 0;
+        return isset($count[0]['M_COUNTER']) && $count[0]['M_COUNTER'] ? intval($count[0]['M_COUNTER']) : 0;
     }
 
     /**
      * 修改Where语句
      * @param array $conditions
      * @return $this
+     * @throws DbFieldError
      */
     public function where(array $conditions): SelectOperation
     {
@@ -181,9 +187,10 @@ class SelectOperation extends BaseOperation
      * 对某个字段进行求和
      * @param array $conditions 求和条件
      * @param string $param 求和字段
-     * @return int|mixed
+     * @return int
+     * @throws DbFieldError
      */
-    public function sum(array $conditions, string $param): mixed
+    public function sum(array $conditions, string $param): int
     {
         if (!Field::isName($param)) {
             throw new DbFieldError("Disallowed field name => $param");
@@ -198,7 +205,7 @@ class SelectOperation extends BaseOperation
         } catch (Exception $e) {
             return 0;
         }
-        return isset($count[0]['M_COUNTER']) && $count[0]['M_COUNTER'] ? $count[0]['M_COUNTER'] : 0;
+        return isset($count[0]['M_COUNTER']) && $count[0]['M_COUNTER'] ? intval($count[0]['M_COUNTER']) : 0;
     }
 
     /**
