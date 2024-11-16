@@ -35,12 +35,14 @@ abstract class Dao
     protected ?string $model = null;//具体的模型
     protected string $table = "";
     private ?string $child = null;
+    private ?string $user_key = null;
 
     /**
      * @param string|null $model 指定具体模型
      */
-    public function __construct(string $model = null, string $child = null)
+    public function __construct(string $model = null, string $child = null, $user_key = null)
     {
+        $this->user_key = $user_key;
         $this->dbInit();
         $cache = new Cache();
         if (!empty($model)) {
@@ -91,12 +93,12 @@ abstract class Dao
      * 获取数据库实例
      * @return $this
      */
-    static function getInstance(): Dao
+    static function getInstance($user_key = null): Dao
     {
         $cls = get_called_class();
         $instance = self::$instances[$cls] ?? null;
         if (empty($instance)) {
-            $instance = new static(null, $cls);
+            $instance = new static(null, $cls, $user_key);
             self::$instances[$cls] = $instance;
         }
         return $instance;
@@ -127,6 +129,7 @@ abstract class Dao
     /**
      * 当前操作的表
      * @return string
+     * @throws DbExecuteError
      */
     public function getTable(): string
     {
@@ -137,6 +140,9 @@ abstract class Dao
             $pattern = '/(?<=[a-z])([A-Z])/';
             $replacement = '_$1';
             $this->table = strtolower(preg_replace($pattern, $replacement, $class));
+            if (!empty($this->user_key)) {
+                $this->table = $this->table . "_" . md5($this->user_key);
+            }
             return $this->table;
         }
         throw new DbExecuteError("Unknown table name");
