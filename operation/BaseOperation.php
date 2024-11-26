@@ -22,7 +22,6 @@ use nova\framework\log\Logger;
 use nova\plugin\orm\Db;
 use nova\plugin\orm\exception\DbExecuteError;
 use nova\plugin\orm\exception\DbFieldError;
-use function nova\framework\dump;
 
 abstract class BaseOperation
 {
@@ -201,25 +200,25 @@ abstract class BaseOperation
                         }
                     }
                     //识别Like语句
-                    $isMatched = preg_match_all('/like\s+(\')?(%)?(:\w+)(%)?(\')?/', strval($condition), $matches);
+                    $isMatched = preg_match_all('/like\s+([\'"])?(%)?(:[\w]+)(%)?([\'"])?/i', strval($condition), $matches);
 
                     if ($isMatched) {
-                        for ($i = 0; $i < $isMatched; $i++) {
-                            $left_1 = $matches[1][$i];
-                            $key2 = $matches[3][$i];
-                            $left = $matches[2][$i];
-                            $right = $matches[4][$i];
-                            $right_1 = $matches[5][$i];
-                            if (isset($conditions[$key2])) {
-                                $value = $conditions[$key2];
-                                unset($conditions[$key2]);
-                                $value = "$left$value$right";
-                                $conditions[$key2] = $value;
-                                $condition = str_replace("$left_1$left$key2$right$right_1", $key2, $condition);
-
-                                //condition改写
+                        foreach ($matches[3] as $i => $key2) {
+                            if (!isset($conditions[$key2])) {
+                                continue;
                             }
 
+                            $value = $conditions[$key2];
+                            unset($conditions[$key2]);
+
+
+                            // 构建新的值，包含通配符
+                            $value = ($matches[2][$i] ?? '') . $value . ($matches[4][$i] ?? '');
+                            $conditions[$key2] = $value;
+
+                            // 替换原始模式为新的参数名
+                            $originalPattern = $matches[1][$i] . $matches[2][$i] . $key2 . $matches[4][$i] . $matches[5][$i];
+                            $condition = str_replace($originalPattern, $key2, $condition);
                         }
                     }
 
