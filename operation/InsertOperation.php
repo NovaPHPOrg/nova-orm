@@ -1,4 +1,5 @@
 <?php
+
 /*
  * Copyright (c) 2025. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
  * Morbi non lorem porttitor neque feugiat blandit. Ut vitae ipsum eget quam lacinia accumsan.
@@ -23,26 +24,23 @@ declare(strict_types=1);
 
 namespace nova\plugin\orm\operation;
 
-
-use nova\framework\exception\AppExitException;
-use nova\framework\request\Response;
 use nova\plugin\orm\Db;
 use nova\plugin\orm\exception\DbExecuteError;
 
 class InsertOperation extends BaseOperation
 {
     /*数据库常量*/
-    const INSERT_NORMAL = 0;
-    const INSERT_IGNORE = 1;
-    const INSERT_DUPLICATE = 2;
+    public const INSERT_NORMAL = 0;
+    public const INSERT_IGNORE = 1;
+    public const INSERT_DUPLICATE = 2;
 
     /**
      * 用来初始化的
-     * @param Db $db
-     * @param $m
+     * @param Db  $db
+     * @param     $m
      * @param int $model insert模式
      */
-    public function __construct(Db &$db,  $m, int $model = self::INSERT_IGNORE)
+    public function __construct(Db &$db, $m, int $model = self::INSERT_IGNORE)
     {
         parent::__construct($db, $m);
         $this->opt = [];
@@ -62,8 +60,8 @@ class InsertOperation extends BaseOperation
 
     /**
      * 设置添加的kv数组
-     * @param $kv array 数组对应的插入值
-     * @param $udp_keys array 需要更新的字段
+     * @param                  $kv       array 数组对应的插入值
+     * @param                  $udp_keys array 需要更新的字段
      * @return InsertOperation
      */
     public function keyValue(array $kv, array $udp_keys = []): InsertOperation
@@ -73,10 +71,11 @@ class InsertOperation extends BaseOperation
         return $this->keys($key, $udp_keys)->values([$value]);
     }
 
-    public function keyValues(array $kv, array $udp_keys = []): InsertOperation{
+    public function keyValues(array $kv, array $udp_keys = []): InsertOperation
+    {
         $key = array_keys($kv[0]);
         $values = [];
-        foreach ($kv as $item){
+        foreach ($kv as $item) {
             $values[] = array_values($item);
         }
         return $this->keys($key, $udp_keys)->values($values);
@@ -110,8 +109,8 @@ class InsertOperation extends BaseOperation
 
     /**
      * 需要插入的Key
-     * @param array $key
-     * @param ?array $columns
+     * @param  array  $key
+     * @param  ?array $columns
      * @return $this
      */
     public function keys(array $key, ?array $columns = []): InsertOperation

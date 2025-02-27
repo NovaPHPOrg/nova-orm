@@ -1,4 +1,5 @@
 <?php
+
 /*
  * Copyright (c) 2025. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
  * Morbi non lorem porttitor neque feugiat blandit. Ut vitae ipsum eget quam lacinia accumsan.
@@ -10,15 +11,15 @@
 declare(strict_types=1);
 
 return [
-  "config"=>[
-      'db'=>[
-          'type'=>'mysql',
-          'host'=>'localhost',
-          'port'=>3306,
-          'username'=>'root',
-          'password'=>'root',
-          'db'=>'test',
-          'charset'=>'utf8mb4',
-      ],
-  ]
+    "config" => [
+        'db' => [
+            'type' => 'mysql',
+            'host' => 'localhost',
+            'port' => 3306,
+            'username' => 'root',
+            'password' => 'root',
+            'db' => 'test',
+            'charset' => 'utf8mb4',
+        ],
+    ]
 ];

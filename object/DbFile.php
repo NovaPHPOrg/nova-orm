@@ -1,4 +1,5 @@
 <?php
+
 /*
  * Copyright (c) 2025. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
  * Morbi non lorem porttitor neque feugiat blandit. Ut vitae ipsum eget quam lacinia accumsan.
@@ -34,7 +35,7 @@ class DbFile extends ArgObject
     public string $db = "";
     public string $charset = "mb4utf8";
 
-    function hash(): string
+    public function hash(): string
     {
         return md5($this->host . $this->type . $this->port . $this->username . $this->password . $this->db . $this->charset);
     }

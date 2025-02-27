@@ -1,4 +1,5 @@
 <?php
+
 /*
  * Copyright (c) 2025. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
  * Morbi non lorem porttitor neque feugiat blandit. Ut vitae ipsum eget quam lacinia accumsan.
@@ -25,11 +26,11 @@ namespace nova\plugin\orm\object;
 
 class SqlKey
 {
-    const TYPE_INT = 0;
-    const TYPE_FLOAT = 1;
-    const TYPE_TEXT = 2;
-    const TYPE_BOOLEAN = 3;
-    const TYPE_ARRAY = 4;
+    public const TYPE_INT = 0;
+    public const TYPE_FLOAT = 1;
+    public const TYPE_TEXT = 2;
+    public const TYPE_BOOLEAN = 3;
+    public const TYPE_ARRAY = 4;
 
     public string $name;//键名
     public int $type;//类型
@@ -38,10 +39,10 @@ class SqlKey
     public $value;
 
     /**
-     * @param string $name 键名
+     * @param string     $name          键名
      * @param mixed|null $default_value 默认参数
-     * @param int $length 字符长度，仅默认参数类型为{@link string}生效
-     * @param bool $auto 是否自增，仅默认参数类型为{@link int}生效
+     * @param int        $length        字符长度，仅默认参数类型为{@link string}生效
+     * @param bool       $auto          是否自增，仅默认参数类型为{@link int}生效
      */
     public function __construct(string $name, mixed $default_value = null, bool $auto = false, int $length = 0)
     {
@@ -57,13 +58,16 @@ class SqlKey
             $this->length = $length;
         } elseif (is_bool($default_value)) {
             $this->type = self::TYPE_BOOLEAN;
-        } elseif (is_float($default_value)) $this->type = self::TYPE_FLOAT;
-        elseif (is_double($default_value)) $this->type = self::TYPE_FLOAT;
-        elseif(is_array($default_value)||is_object($default_value)){
+        } elseif (is_float($default_value)) {
+            $this->type = self::TYPE_FLOAT;
+        } elseif (is_double($default_value)) {
+            $this->type = self::TYPE_FLOAT;
+        } elseif (is_array($default_value) || is_object($default_value)) {
             $this->type = self::TYPE_ARRAY;
             $this->value = serialize($default_value);
-        }else $this->type = self::TYPE_TEXT;
-
+        } else {
+            $this->type = self::TYPE_TEXT;
+        }
 
     }
 }

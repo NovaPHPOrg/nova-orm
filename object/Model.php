@@ -1,4 +1,5 @@
 <?php
+
 /*
  * Copyright (c) 2025. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
  * Morbi non lorem porttitor neque feugiat blandit. Ut vitae ipsum eget quam lacinia accumsan.
@@ -22,7 +23,6 @@ declare(strict_types=1);
  */
 
 namespace nova\plugin\orm\object;
-
 
 use nova\framework\text\ArgObject;
 
@@ -59,7 +59,7 @@ abstract class Model extends ArgObject
 
     /**
      * 是否为不不要转义的字段
-     * @param $key
+     * @param       $key
      * @return bool
      */
     private function inNoEscape($key): bool
@@ -102,7 +102,6 @@ abstract class Model extends ArgObject
         return new SqlKey('id', 0, true);
     }
 
-
     public function onToArray(string $key, mixed &$value, &$ret): void
     {
         parent::onToArray($key, $value, $ret);
@@ -110,7 +109,6 @@ abstract class Model extends ArgObject
             $value = serialize($value);
         }
     }
-
 
     public function getFullTextKeys(): array
     {

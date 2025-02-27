@@ -1,4 +1,5 @@
 <?php
+
 /*
  * Copyright (c) 2025. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
  * Morbi non lorem porttitor neque feugiat blandit. Ut vitae ipsum eget quam lacinia accumsan.
@@ -28,7 +29,7 @@ use nova\framework\log\Logger;
 
 class DbExecuteError extends Exception
 {
-    public function __construct($message = "",$sql = "")
+    public function __construct($message = "", $sql = "")
     {
         Logger::error($message);
         Logger::error("Error sql: $sql");

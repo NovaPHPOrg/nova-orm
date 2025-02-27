@@ -1,4 +1,5 @@
 <?php
+
 /*
  * Copyright (c) 2025. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
  * Morbi non lorem porttitor neque feugiat blandit. Ut vitae ipsum eget quam lacinia accumsan.
@@ -25,8 +26,7 @@ namespace nova\plugin\orm\operation;
 
 class DeleteOperation extends BaseOperation
 {
-
-    public function __construct(&$db,$model)
+    public function __construct(&$db, $model)
     {
         parent::__construct($db, $model);
         $this->opt = [];
@@ -37,7 +37,7 @@ class DeleteOperation extends BaseOperation
 
     /**
      * 修改Where语句
-     * @param array $conditions
+     * @param  array $conditions
      * @return $this
      */
     public function where(array $conditions): DeleteOperation

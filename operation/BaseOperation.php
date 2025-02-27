@@ -1,4 +1,5 @@
 <?php
+
 /*
  * Copyright (c) 2025. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
  * Morbi non lorem porttitor neque feugiat blandit. Ut vitae ipsum eget quam lacinia accumsan.
@@ -23,8 +24,6 @@ declare(strict_types=1);
 
 namespace nova\plugin\orm\operation;
 
-
-
 use nova\framework\cache\Cache;
 use nova\framework\log\Logger;
 use nova\plugin\orm\Db;
@@ -46,7 +45,7 @@ abstract class BaseOperation
     protected array $tables = [];
 
     /**
-     * @param $db DB 数据库对象
+     * @param $db    DB 数据库对象
      * @param $model ?string 数据模型
      */
     public function __construct(Db &$db, string $model = null)
@@ -57,7 +56,7 @@ abstract class BaseOperation
 
     /**
      * 设置表名
-     * @param string ...$tableName
+     * @param  string        ...$tableName
      * @return BaseOperation $this
      */
     public function table(string ...$tableName): BaseOperation
@@ -98,14 +97,16 @@ abstract class BaseOperation
     /**
      *
      * 提交
-     * @param bool $readonly
+     * @param  bool           $readonly
      * @return array|int
      * @throws DbExecuteError
      */
     protected function __commit(bool $readonly = false): int|array
     {
 
-        if ($this->transferSql == null) $this->translateSql();
+        if ($this->transferSql == null) {
+            $this->translateSql();
+        }
 
         $this->buildSql = $this->buildRunSQL($this->transferSql, $this->bind_param);
 
@@ -114,19 +115,19 @@ abstract class BaseOperation
         $key = $this->getCacheKey();
         $result = null;
 
-        if ($readonly){
+        if ($readonly) {
             //尝试从缓存中获取数据
             $result = $cache->get("sql/$tableKey/$key");
         }
-        if(empty($result)){
+        if (empty($result)) {
             Logger::info("SQL: $this->buildSql");
             $result = $this->db->execute($this->transferSql, $this->bind_param, $readonly);
             if ($readonly) {
                 //将数据存入缓存
                 $cache->set("sql/$tableKey/$key", $result, 300); //缓存5分钟
-            }else{
+            } else {
                 //清空缓存
-               $cache->deleteKeyStartWith("sql/$tableKey");
+                $cache->deleteKeyStartWith("sql/$tableKey");
             }
         }
 
@@ -148,7 +149,6 @@ abstract class BaseOperation
         return $this->opt['table_name'];
     }
 
-
     /**
      * 编译sql语句
      * @return void
@@ -157,19 +157,21 @@ abstract class BaseOperation
 
     /**
      * 获取存储的数据选项
-     * @param $head
-     * @param $opt
+     * @param         $head
+     * @param         $opt
      * @return string
      */
     protected function getOpt($head, $opt): string
     {
-        if (isset($this->opt[$opt])) return ' ' . $head . ' ' . $this->opt[$opt] . ' ';
+        if (isset($this->opt[$opt])) {
+            return ' ' . $head . ' ' . $this->opt[$opt] . ' ';
+        }
         return ' ';
     }
 
     /**
      * 设置查询条件
-     * @param array $conditions 条件内容，必须是数组,格式如下["name"=>"张三","i > :hello",":hello"=>"hi"," id in (:in)",":in"=>"1,3,4,5"]
+     * @param  array         $conditions 条件内容，必须是数组,格式如下["name"=>"张三","i > :hello",":hello"=>"hi"," id in (:in)",":in"=>"1,3,4,5"]
      * @return BaseOperation $this
      * @throws DbFieldError
      */
@@ -181,7 +183,9 @@ abstract class BaseOperation
             reset($conditions);
 
             foreach ($conditions as $key => &$condition) {
-                if (is_array($condition)) throw new DbFieldError("UnSupport Array Condition: " . json_encode($condition), $key);
+                if (is_array($condition)) {
+                    throw new DbFieldError("UnSupport Array Condition: " . json_encode($condition), $key);
+                }
                 if (is_int($key)) {
                     $isMatched = preg_match_all('/in(\s+)?\((\s+)?(:\w+)\)/', strval($condition), $matches);
 
@@ -219,7 +223,6 @@ abstract class BaseOperation
                             $value = $conditions[$key2];
                             unset($conditions[$key2]);
 
-
                             // 构建新的值，包含通配符
                             $value = ($matches[2][$i] ?? '') . $value . ($matches[4][$i] ?? '');
                             $conditions[$key2] = $value;
@@ -229,7 +232,6 @@ abstract class BaseOperation
                             $condition = str_replace($originalPattern, $key2, $condition);
                         }
                     }
-
 
                     $join[] = $condition;
                     unset($conditions[$key]);
@@ -244,7 +246,9 @@ abstract class BaseOperation
                 }
 
             }
-            if (!$sql) $sql = join(" AND ", $join);
+            if (!$sql) {
+                $sql = join(" AND ", $join);
+            }
             $this->opt['where'] = $sql;
             $this->bind_param += $conditions;
         }
@@ -257,7 +261,9 @@ abstract class BaseOperation
      */
     protected function translate2Model(string $model, array $data): ?array
     {
-        if (!class_exists($model)) throw new DbExecuteError("Model Not Found: " . $model);
+        if (!class_exists($model)) {
+            throw new DbExecuteError("Model Not Found: " . $model);
+        }
         $ret = [];
         foreach ($data as $val) {
             $ret[] = new $model($val, true);

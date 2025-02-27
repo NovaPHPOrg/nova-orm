@@ -1,4 +1,5 @@
 <?php
+
 /*
  * Copyright (c) 2025. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
  * Morbi non lorem porttitor neque feugiat blandit. Ut vitae ipsum eget quam lacinia accumsan.
@@ -38,7 +39,6 @@ use Throwable;
 
 abstract class Dao
 {
-
     protected ?Db $db = null;
     protected ?string $model = null;//具体的模型
     protected string $table = "";
@@ -74,7 +74,7 @@ abstract class Dao
                         $table_exist = false;
                     }
                     if (!$table_exist) {
-                        $this->db->initTable($this, new $class, trim($table, '`'));
+                        $this->db->initTable($this, new $class(), trim($table, '`'));
                         $cache->set("table_" . $table, true);
                     }
                 }
@@ -84,10 +84,9 @@ abstract class Dao
 
     }
 
-
     /**
      * 数据库初始化
-     * @param DbFile|null $dbFile
+     * @param  DbFile|null $dbFile
      * @return void
      */
     protected function dbInit(?DbFile $dbFile = null): void
@@ -101,7 +100,7 @@ abstract class Dao
      * 获取数据库实例
      * @return $this
      */
-    static function getInstance($user_key = null): Dao
+    public static function getInstance($user_key = null): Dao
     {
         $cls = get_called_class();
         $instance = self::$instances[$cls] ?? null;
@@ -114,10 +113,10 @@ abstract class Dao
 
     /**
      * 设置单项
-     * @param $key_name
-     * @param $key_value
-     * @param $set_key
-     * @param $set_value
+     * @param       $key_name
+     * @param       $key_value
+     * @param       $set_key
+     * @param       $set_value
      * @return void
      */
     public function setOption($key_name, $key_value, $set_key, $set_value): void
@@ -141,7 +140,9 @@ abstract class Dao
      */
     public function getTable(): string
     {
-        if (!empty($this->table)) return $this->table;
+        if (!empty($this->table)) {
+            return $this->table;
+        }
         if (!empty($this->child)) {
             $array = explode("\\", $this->child);
             $class = str_replace("Dao", "", end($array));
@@ -160,14 +161,14 @@ abstract class Dao
      * 获取指定条件下的数据量
      * @return int|mixed
      */
-    function getCount($condition = []): mixed
+    public function getCount($condition = []): mixed
     {
         return $this->select()->count($condition);
     }
 
     /**
      * 查找
-     * @param ...$field string|Field 需要查询的字段
+     * @param                              ...$field string|Field 需要查询的字段
      * @return SelectOperation
      * @throws DbFieldError|DbExecuteError
      */
@@ -178,10 +179,10 @@ abstract class Dao
 
     /**
      * 获取指定参数的求和
-     * @param array $condition
+     * @param array  $condition
      * @param string $field
      */
-    function getSum(array $condition = [], string $field = "id")
+    public function getSum(array $condition = [], string $field = "id")
     {
         return $this->select()->sum($condition, $field);
     }
@@ -198,9 +199,9 @@ abstract class Dao
 
     /**
      * 数据库执行
-     * @param string $sql 需要执行的sql语句
-     * @param array $params 绑定的sql参数
-     * @param false $readonly 是否为查询
+     * @param  string         $sql      需要执行的sql语句
+     * @param  array          $params   绑定的sql参数
+     * @param  false          $readonly 是否为查询
      * @return array|int
      * @throws DbExecuteError
      */
@@ -229,8 +230,8 @@ abstract class Dao
 
     /**
      * 插入模型
-     * @param Model $model
-     * @param bool $autoUpdate 是否自动更新
+     * @param  Model $model
+     * @param  bool  $autoUpdate 是否自动更新
      * @return int
      */
     public function insertModel(Model $model, bool $autoUpdate = false): int
@@ -239,10 +240,13 @@ abstract class Dao
         $unique = $model->getUnique();
         $kv = $model->toArray();
         if ($primary !== null) {
-            if (isset($kv[$primary])) unset($kv[$primary]);
+            if (isset($kv[$primary])) {
+                unset($kv[$primary]);
+            }
         }
-        if (!$autoUpdate) return (int)$this->insert()->keyValue($kv)->commit();
-        else {
+        if (!$autoUpdate) {
+            return (int)$this->insert()->keyValue($kv)->commit();
+        } else {
 
             $kvKeys = array_keys($kv);
             $kvKeys = array_diff($kvKeys, $unique);
@@ -253,7 +257,7 @@ abstract class Dao
 
     /**
      * 获取自增主键
-     * @param Model $old_model
+     * @param  Model       $old_model
      * @return string|null
      */
     private function getAutoPrimary(Model $old_model): ?string
@@ -263,14 +267,16 @@ abstract class Dao
          * @var $value SqlKey
          */
         foreach ($primary_keys as $value) {
-            if ($value->auto) return $value->name;
+            if ($value->auto) {
+                return $value->name;
+            }
         }
         return null;
     }
 
     /**
      * 插入语句
-     * @param int $model
+     * @param  int             $model
      * @return InsertOperation
      */
     protected function insert(int $model = InsertOperation::INSERT_NORMAL): InsertOperation
@@ -280,8 +286,8 @@ abstract class Dao
 
     /**
      * 更新模型
-     * @param Model $new_model 新的模型
-     * @param Model|null $old_model 旧的模型
+     * @param  Model      $new_model 新的模型
+     * @param  Model|null $old_model 旧的模型
      * @return bool
      */
     public function updateModel(Model $new_model, Model $old_model = null): bool
@@ -291,7 +297,9 @@ abstract class Dao
         } else {
             $condition = $this->getPrimaryCondition($old_model);
         }
-        if ($this->find(new Field("id"), $condition) == null) return false;
+        if ($this->find(new Field("id"), $condition) == null) {
+            return false;
+        }
         //获取到更新数据的条件
         $this->update()->where($condition)->set($new_model->toArray())->commit();
         return true;
@@ -299,7 +307,7 @@ abstract class Dao
 
     /**
      * 获取主键数组
-     * @param Model $old_model
+     * @param  Model $old_model
      * @return array
      */
     private function getPrimaryCondition(Model $old_model): array
@@ -320,7 +328,7 @@ abstract class Dao
 
     /**
      * 删除模型
-     * @param Model $model
+     * @param  Model $model
      * @return void
      */
     public function deleteModel(Model $model): void
@@ -340,13 +348,15 @@ abstract class Dao
 
     /**
      * 查找单个数据
-     * @param ?Field $field 字段构造
-     * @param array $condition 查询条件
+     * @param  ?Field     $field     字段构造
+     * @param  array      $condition 查询条件
      * @return mixed|null
      */
     protected function find(Field $field = null, array $condition = []): mixed
     {
-        if ($field === null) $field = new Field();
+        if ($field === null) {
+            $field = new Field();
+        }
 
         $result = $this->select($field)->where($condition)->limit()->commit();
         if (!empty($result)) {
@@ -381,27 +391,31 @@ abstract class Dao
 
     /**
      * 获取所有数据
-     * @param array|null $fields
-     * @param array $where
-     * @param int|null $start
-     * @param int $size
-     * @param bool $page
-     * @param array|string|null $orderBy
+     * @param  array|null                    $fields
+     * @param  array                         $where
+     * @param  int|null                      $start
+     * @param  int                           $size
+     * @param  bool                          $page
+     * @param  array|string|null             $orderBy
      * @return array
      * @throws DbExecuteError
      * @throws DbFieldError|AppExitException
      */
-    function getAll(?array $fields = [], array $where = [], ?int $start = null, int $size = 10, bool $page = false, array|string $orderBy = null): array
+    public function getAll(?array $fields = [], array $where = [], ?int $start = null, int $size = 10, bool $page = false, array|string $orderBy = null): array
     {
         $ret = [
             "data" => [],
         ];
-        if ($size > 1000) $size = 1000;
+        if ($size > 1000) {
+            $size = 1000;
+        }
         $total = 0;
-        if ($fields === null) $fields = [];
+        if ($fields === null) {
+            $fields = [];
+        }
         if ($start === null) {
             $result = $this->select(...$fields)->where($where)->commit();
-        } else if (!empty($orderBy)) {
+        } elseif (!empty($orderBy)) {
             $select = $this->select(...$fields)->page($start, $size)->where($where);
 
             if (is_array($orderBy)) {
@@ -431,7 +445,7 @@ abstract class Dao
 
     /**
      * 判断是否存在
-     * @param array $where
+     * @param  array          $where
      * @return bool
      * @throws DbExecuteError
      */
@@ -439,6 +453,5 @@ abstract class Dao
     {
         return $this->select(new Field("id"))->where($where)->limit()->commit() != null;
     }
-
 
 }

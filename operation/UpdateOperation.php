@@ -1,4 +1,5 @@
 <?php
+
 /*
  * Copyright (c) 2025. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
  * Morbi non lorem porttitor neque feugiat blandit. Ut vitae ipsum eget quam lacinia accumsan.
@@ -36,10 +37,9 @@ class UpdateOperation extends BaseOperation
         $this->bind_param = [];
     }
 
-
     /**
      * 设置条件
-     * @param array $conditions
+     * @param  array           $conditions
      * @return UpdateOperation
      */
     public function where(array $conditions): UpdateOperation
@@ -49,7 +49,7 @@ class UpdateOperation extends BaseOperation
 
     /**
      * 设置更新字段信息
-     * @param $row array
+     * @param        $row array
      * @return $this
      */
     public function set(array $row): UpdateOperation

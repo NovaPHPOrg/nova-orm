@@ -1,4 +1,5 @@
 <?php
+
 /*
  * Copyright (c) 2025. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
  * Morbi non lorem porttitor neque feugiat blandit. Ut vitae ipsum eget quam lacinia accumsan.
@@ -39,36 +40,36 @@ abstract class Driver
 
     /**
      * 主键渲染
-     * @param Model $model
-     * @param string $table
+     * @param  Model  $model
+     * @param  string $table
      * @return string
      */
-    abstract function renderCreateTable(Model $model, string $table): string;
+    abstract public function renderCreateTable(Model $model, string $table): string;
 
     /**
      * 渲染键值
-     * @param SqlKey $sqlKey
+     * @param  SqlKey $sqlKey
      * @return mixed
      */
-    abstract function renderKey(SqlKey $sqlKey): mixed;
+    abstract public function renderKey(SqlKey $sqlKey): mixed;
 
     /**
      * 获取数据库链接
      * @return PDO
      */
-    abstract function getDbConnect(): PDO;
+    abstract public function getDbConnect(): PDO;
 
     /**
      * 清空数据表
-     * @param $table string 表格
+     * @param        $table string 表格
      * @return mixed
      */
-    abstract function renderEmpty(string $table): mixed;
+    abstract public function renderEmpty(string $table): mixed;
 
     /**
      * 处理插入模式
-     * @param $model int 从以下{@link InsertOperation::INSERT_NORMAL}、{@link InsertOperation::INSERT_DUPLICATE}、{@link InsertOperation::INSERT_IGNORE}数据中获取
+     * @param      $model int 从以下{@link InsertOperation::INSERT_NORMAL}、{@link InsertOperation::INSERT_DUPLICATE}、{@link InsertOperation::INSERT_IGNORE}数据中获取
      * @return int
      */
-    abstract function onInsertModel(int $model): int;
+    abstract public function onInsertModel(int $model): int;
 }

@@ -1,4 +1,5 @@
 <?php
+
 /*
  * Copyright (c) 2025. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
  * Morbi non lorem porttitor neque feugiat blandit. Ut vitae ipsum eget quam lacinia accumsan.
@@ -31,13 +32,12 @@ use nova\plugin\orm\object\Field;
 
 class SelectOperation extends BaseOperation
 {
-    const SORT_DESC = "DESC";
-    const SORT_ASC = "ASC";
-
+    public const SORT_DESC = "DESC";
+    public const SORT_ASC = "ASC";
 
     /**
      * 初始化
-     * @param mixed ...$field 需要的字段
+     * @param  mixed        ...$field 需要的字段
      * @throws DbFieldError
      */
     public function __construct(Db &$db, $m, ...$field)
@@ -50,10 +50,9 @@ class SelectOperation extends BaseOperation
         $this->bind_param = [];
     }
 
-
     /**
      * 使用排序
-     * @param string $string 排序方式
+     * @param  string       $string 排序方式
      * @return $this
      * @throws DbFieldError
      */
@@ -74,44 +73,45 @@ class SelectOperation extends BaseOperation
         return $this;
     }
 
-
     /**
      * 按照某个字段分组
-     * @param string $string
+     * @param  string       $string
      * @return $this
      * @throws DbFieldError
      */
     public function groupBy(string $string): SelectOperation
     {
-        if (!Field::isName($string))
+        if (!Field::isName($string)) {
             throw new DbFieldError("Disallowed field name => $string", $string);
+        }
         $this->opt['group_by'] = $string;
         return $this;
     }
 
-
     /**
      * limit函数
-     * @param int $start limit开始
-     * @param int $end limit结束
+     * @param  int   $start limit开始
+     * @param  int   $end   limit结束
      * @return $this
      */
     public function limit(int $start = 1, int $end = -1): SelectOperation
     {
         unset($this->opt['page']);
         $limit = strval($start);
-        if ($end != -1) $limit .= "," . $end;
+        if ($end != -1) {
+            $limit .= "," . $end;
+        }
         $this->opt['limit'] = $limit;
         return $this;
     }
 
     /**
      * 分页
-     * @param int $start 开始
-     * @param int $count 数量
+     * @param  int   $start 开始
+     * @param  int   $count 数量
      * @return $this
      */
-    public function page( int $start = 1, int $count = 10): SelectOperation
+    public function page(int $start = 1, int $count = 10): SelectOperation
     {
 
         unset($this->opt['limit']);
@@ -123,8 +123,8 @@ class SelectOperation extends BaseOperation
 
     /**
      * 提交
-     * @param int $total
-     * @param bool $object
+     * @param  int            $total
+     * @param  bool           $object
      * @return array|int
      * @throws DbExecuteError
      */
@@ -154,7 +154,9 @@ class SelectOperation extends BaseOperation
 
         $result = parent::__commit(true);
 
-        if (!$object)return $result;
+        if (!$object) {
+            return $result;
+        }
         if ($this->model !== null) {
 
             return $this->translate2Model($this->model, $result);
@@ -166,13 +168,15 @@ class SelectOperation extends BaseOperation
 
     /**
      * 统计查出来的数据的总数
-     * @param array $conditions 统计条件
+     * @param  array                       $conditions 统计条件
      * @return int
      * @throws DbExecuteError|DbFieldError
      */
     public function count(array $conditions): mixed
     {
-        if (!empty($conditions)) $this->where($conditions);
+        if (!empty($conditions)) {
+            $this->where($conditions);
+        }
         $sql = /** @lang text */
             "SELECT COUNT(*) AS M_COUNTER FROM " . $this->opt['table_name'] . "  " . (empty($conditions) ? '' : 'where ' . $this->opt['where']);
         $this->transferSql = $sql;
@@ -182,7 +186,7 @@ class SelectOperation extends BaseOperation
 
     /**
      * 修改Where语句
-     * @param array $conditions
+     * @param  array        $conditions
      * @return $this
      * @throws DbFieldError
      */
@@ -193,8 +197,8 @@ class SelectOperation extends BaseOperation
 
     /**
      * 对某个字段进行求和
-     * @param array $conditions 求和条件
-     * @param string $param 求和字段
+     * @param  array        $conditions 求和条件
+     * @param  string       $param      求和字段
      * @return int
      * @throws DbFieldError
      */
@@ -203,7 +207,9 @@ class SelectOperation extends BaseOperation
         if (!Field::isName($param)) {
             throw new DbFieldError("Disallowed field name => $param");
         }
-        if (!empty($conditions)) $this->where($conditions);
+        if (!empty($conditions)) {
+            $this->where($conditions);
+        }
 
         $sql = /** @lang text */
             "SELECT SUM($param) AS M_COUNTER FROM " . $this->opt['table_name'] . " " . (empty($conditions) ? '' : 'where ' . $this->opt['where']);
@@ -240,6 +246,5 @@ class SelectOperation extends BaseOperation
         $sql .= $this->getOpt('LIMIT', 'limit');
         $this->transferSql = $sql . ";";
     }
-
 
 }

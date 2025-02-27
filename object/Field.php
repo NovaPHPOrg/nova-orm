@@ -1,4 +1,5 @@
 <?php
+
 /*
  * Copyright (c) 2025. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
  * Morbi non lorem porttitor neque feugiat blandit. Ut vitae ipsum eget quam lacinia accumsan.
@@ -34,20 +35,23 @@ class Field
     public function __construct(...$fields)
     {
         foreach ($fields as $field) {
-            if (!self::isName($field))
-                throw new DbFieldError("Unrecognized field name: $field",$field);
+            if (!self::isName($field)) {
+                throw new DbFieldError("Unrecognized field name: $field", $field);
+            }
         }
         $this->fields = $fields;
     }
 
     /**
      * 判断字段是否正常
-     * @param $name
+     * @param       $name
      * @return bool
      */
     public static function isName($name): bool
     {
-        if (!is_string($name)) return false;
+        if (!is_string($name)) {
+            return false;
+        }
 
         return preg_match_all('/^[0-9a-zA-Z_.\s*()]+$/', $name) > 0;
     }
@@ -58,7 +62,9 @@ class Field
      */
     public function toString(): string
     {
-        if (empty($this->fields)) return "*";
+        if (empty($this->fields)) {
+            return "*";
+        }
         return "`".implode("`,`", $this->fields)."`";
     }
 

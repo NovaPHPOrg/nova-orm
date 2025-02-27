@@ -1,4 +1,5 @@
 <?php
+
 /*
  * Copyright (c) 2025. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
  * Morbi non lorem porttitor neque feugiat blandit. Ut vitae ipsum eget quam lacinia accumsan.
@@ -23,8 +24,10 @@ declare(strict_types=1);
 
 namespace nova\plugin\orm;
 
-
 use nova\framework\App;
+
+use function nova\framework\config;
+
 use nova\framework\exception\AppExitException;
 use nova\framework\log\Logger;
 use nova\framework\request\Response;
@@ -35,17 +38,16 @@ use nova\plugin\orm\object\DbFile;
 use nova\plugin\orm\object\Model;
 use PDO;
 use PDOException;
+
 use PDOStatement;
-use function nova\framework\config;
 
 class Db
 {
     private ?Driver $db = null;
 
-
     /**
      * 构造函数
-     * @param DbFile $dbFile 数据库配置类
+     * @param  DbFile           $dbFile 数据库配置类
      * @throws AppExitException
      */
     public function __construct(DbFile $dbFile)
@@ -66,11 +68,11 @@ class Db
         }
     }
 
-    static array $instance = []; //一个配置文件对应一个数据库实例
+    public static array $instance = []; //一个配置文件对应一个数据库实例
 
     /**
      * 使用指定数据库配置初始化数据库连接
-     * @param DbFile|null $dbFile
+     * @param  DbFile|null      $dbFile
      * @return Db
      * @throws AppExitException
      */
@@ -93,25 +95,25 @@ class Db
 
     /**
      * 数据表初始化
-     * @param Dao $dao
-     * @param Model $model
-     * @param string $table
+     * @param  Dao            $dao
+     * @param  Model          $model
+     * @param  string         $table
      * @return void
      * @throws DbExecuteError
      */
-    function initTable(Dao $dao, Model $model, string $table): void
+    public function initTable(Dao $dao, Model $model, string $table): void
     {
 
-         Logger::Info("create database table : $table ");
+        Logger::Info("create database table : $table ");
         $this->execute($this->db->renderCreateTable($model, $table));
         $dao->onCreateTable();
     }
 
     /**
      * 数据库执行
-     * @param string $sql 需要执行的sql语句
-     * @param array $params 绑定的sql参数
-     * @param false $readonly 是否为查询
+     * @param  string         $sql      需要执行的sql语句
+     * @param  array          $params   绑定的sql参数
+     * @param  false          $readonly 是否为查询
      * @return array|int
      * @throws DbExecuteError
      */
@@ -125,9 +127,7 @@ class Db
 
         $connect = $this->db->getDbConnect();
 
-
         $sth = $connect->prepare($sql);
-
 
         if (!$sth) {
             throw new DbExecuteError(
@@ -136,18 +136,20 @@ class Db
             );
         }
 
-        if (is_array($params) && !empty($params)) foreach ($params as $k => $v) {
-            if (is_int($v)) {
-                $data_type = PDO::PARAM_INT;
-            } elseif (is_bool($v)) {
-                $data_type = PDO::PARAM_BOOL;
-            } elseif (is_null($v)) {
-                $data_type = PDO::PARAM_NULL;
-            } else {
-                $data_type = PDO::PARAM_STR;
-            }
+        if (is_array($params) && !empty($params)) {
+            foreach ($params as $k => $v) {
+                if (is_int($v)) {
+                    $data_type = PDO::PARAM_INT;
+                } elseif (is_bool($v)) {
+                    $data_type = PDO::PARAM_BOOL;
+                } elseif (is_null($v)) {
+                    $data_type = PDO::PARAM_NULL;
+                } else {
+                    $data_type = PDO::PARAM_STR;
+                }
 
-            $sth->bindValue($k, $v, $data_type);
+                $sth->bindValue($k, $v, $data_type);
+            }
         }
         $ret = null;
         try {
@@ -156,8 +158,11 @@ class Db
             }
         } catch (PDOException $exception) {
             throw new DbExecuteError(
-                sprintf("Run Sql Error：\r\n%s\r\n\r\nError Info：%s",
-                    $this->highlightSQL($sql), $exception->getMessage()),
+                sprintf(
+                    "Run Sql Error：\r\n%s\r\n\r\nError Info：%s",
+                    $this->highlightSQL($sql),
+                    $exception->getMessage()
+                ),
                 $sql
             );
         }
@@ -170,12 +175,14 @@ class Db
             return $ret;
         }
         throw new DbExecuteError(
-            sprintf("Run Sql Error：\r\n%s\r\n\r\nError Info：%s",
-                $this->highlightSQL($sql), $sth->errorInfo()[2]),
+            sprintf(
+                "Run Sql Error：\r\n%s\r\n\r\nError Info：%s",
+                $this->highlightSQL($sql),
+                $sth->errorInfo()[2]
+            ),
             $sql
         );
     }
-
 
     private function highlightSQL($sql): string
     {
@@ -220,7 +227,6 @@ class Db
         }, $sql);
     }
 
-
     public function __destruct()
     {
         unset($this->db);
@@ -237,12 +243,14 @@ class Db
 
     /**
      * 导入数据表
-     * @param string $sql_path
+     * @param  string $sql_path
      * @return void
      */
     public function import(string $sql_path): void
     {
-        if (!file_exists($sql_path)) return;
+        if (!file_exists($sql_path)) {
+            return;
+        }
 
         $file = fopen($sql_path, "r");
         while (!feof($file)) {
@@ -271,8 +279,8 @@ class Db
 
     /**
      * 导出数据表
-     * @param ?string $output 输出路径
-     * @param bool $only_struct 是否只导出结构
+     * @param  ?string        $output      输出路径
+     * @param  bool           $only_struct 是否只导出结构
      * @return string
      * @throws DbExecuteError
      */
@@ -305,7 +313,9 @@ class Db
             foreach ($tabList as $val) {
                 $sql = "select * from " . $val;
                 $result = $this->execute($sql, [], true);
-                if (count($result) < 1) continue;
+                if (count($result) < 1) {
+                    continue;
+                }
                 $info .= "-- ----------------------------\r\n";
                 $info .= "-- Records for `" . $val . "`\r\n";
                 $info .= "-- ----------------------------\r\n";
@@ -321,11 +331,10 @@ class Db
                     $info .= $sqlStr;
                 }
 
-
             }
         }
         if ($output !== null) {
-            if(!file_exists(dirname($output))){
+            if (!file_exists(dirname($output))) {
                 mkdir(dirname($output), 0777, true);
             }
             file_put_contents($output, $info);
@@ -333,6 +342,5 @@ class Db
 
         return $info;
     }
-
 
 }
