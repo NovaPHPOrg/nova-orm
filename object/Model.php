@@ -24,7 +24,8 @@ declare(strict_types=1);
 
 namespace nova\plugin\orm\object;
 
-use nova\framework\text\ArgObject;
+
+use nova\framework\core\ArgObject;
 
 abstract class Model extends ArgObject
 {
@@ -43,7 +44,7 @@ abstract class Model extends ArgObject
             $val = unserialize($val);
         }
 
-        if ($this->fromDb && is_string($demo) && !$this->inNoEscape($key)) {
+        if ($this->fromDb && is_string($demo) && !$this->inNoEscape($key) && is_string($val)) {
             if (empty($val)) {
                 $val = $demo;
             }

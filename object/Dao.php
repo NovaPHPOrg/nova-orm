@@ -136,7 +136,7 @@ abstract class Dao
     /**
      * 当前操作的表
      * @return string
-     * @throws DbExecuteError
+     
      */
     public function getTable(): string
     {
@@ -190,7 +190,7 @@ abstract class Dao
     /**
      * 删除当前表
      * @return array|int
-     * @throws DbExecuteError
+     
      */
     public function dropTable(): int|array
     {
@@ -203,7 +203,7 @@ abstract class Dao
      * @param  array          $params   绑定的sql参数
      * @param  false          $readonly 是否为查询
      * @return array|int
-     * @throws DbExecuteError
+     
      */
     protected function execute(string $sql, array $params = [], bool $readonly = false): int|array
     {
@@ -213,7 +213,7 @@ abstract class Dao
     /**
      * 清空当前表
      * @return array|int
-     * @throws DbExecuteError
+     
      */
     public function emptyTable(): int|array
     {
@@ -398,7 +398,7 @@ abstract class Dao
      * @param  bool                          $page
      * @param  array|string|null             $orderBy
      * @return array
-     * @throws DbExecuteError
+     
      * @throws DbFieldError|AppExitException
      */
     public function getAll(?array $fields = [], array $where = [], ?int $start = null, int $size = 10, bool $page = false, array|string $orderBy = null): array
@@ -447,7 +447,7 @@ abstract class Dao
      * 判断是否存在
      * @param  array          $where
      * @return bool
-     * @throws DbExecuteError
+     
      */
     public function exists(array $where = []): bool
     {

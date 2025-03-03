@@ -25,14 +25,13 @@ declare(strict_types=1);
 namespace nova\plugin\orm\exception;
 
 use Exception;
-use nova\framework\log\Logger;
+use nova\framework\core\Logger;
 
 class DbExecuteError extends Exception
 {
     public function __construct($message = "", $sql = "")
     {
-        Logger::error($message);
-        Logger::error("Error sql: $sql");
+        Logger::error($message,[$sql]);
         parent::__construct($message);
     }
 }

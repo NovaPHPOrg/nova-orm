@@ -126,7 +126,7 @@ class SelectOperation extends BaseOperation
      * @param  int            $total
      * @param  bool           $object
      * @return array|int
-     * @throws DbExecuteError
+     
      */
     public function commit(int &$total = 0, bool $object = true): array|int
     {
@@ -170,7 +170,7 @@ class SelectOperation extends BaseOperation
      * 统计查出来的数据的总数
      * @param  array                       $conditions 统计条件
      * @return int
-     * @throws DbExecuteError|DbFieldError
+     |DbFieldError
      */
     public function count(array $conditions): mixed
     {
