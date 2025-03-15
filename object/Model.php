@@ -24,13 +24,34 @@ declare(strict_types=1);
 
 namespace nova\plugin\orm\object;
 
-
 use nova\framework\core\ArgObject;
 
 abstract class Model extends ArgObject
 {
     public int $id = 0;
     private bool $fromDb = false;
+
+    /**
+     * 获取表结构版本号
+     * 当表结构发生变化时，增加版本号可以触发表结构更新
+     * @return int 表结构版本号
+     */
+    public function getSchemaVersion(): int
+    {
+        return 1; // 默认版本为1，子类可以覆盖此方法
+    }
+
+    /**
+     * 获取表结构变更SQL
+     * 当表结构版本变更时，可以通过此方法提供升级SQL
+     * @param  int   $fromVersion 当前版本
+     * @param  int   $toVersion   目标版本
+     * @return array 包含升级SQL语句的数组
+     */
+    public function getUpgradeSql(int $fromVersion, int $toVersion): array
+    {
+        return []; // 默认不需要升级，子类可以覆盖此方法
+    }
 
     public function __construct(array $item = [], $fromDb = false)
     {

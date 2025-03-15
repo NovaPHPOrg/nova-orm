@@ -97,9 +97,8 @@ abstract class BaseOperation
     /**
      *
      * 提交
-     * @param  bool           $readonly
+     * @param  bool      $readonly
      * @return array|int
-     
      */
     protected function __commit(bool $readonly = false): int|array
     {
@@ -120,7 +119,7 @@ abstract class BaseOperation
             $result = $cache->get("sql/$tableKey/$key");
         }
         if (empty($result)) {
-            Logger::info("SQL",[ $this->buildSql ]);
+            Logger::info("SQL", [ $this->buildSql ]);
             $result = $this->db->execute($this->transferSql, $this->bind_param, $readonly);
             if ($readonly) {
                 //将数据存入缓存
@@ -257,7 +256,7 @@ abstract class BaseOperation
 
     /**
      * 将数据集转换为对象
-     
+
      */
     protected function translate2Model(string $model, array $data): ?array
     {

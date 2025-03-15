@@ -24,8 +24,9 @@ declare(strict_types=1);
 
 namespace nova\plugin\orm\object;
 
-use nova\framework\App;
 use nova\framework\cache\Cache;
+use nova\framework\core\Context;
+use nova\framework\core\Logger;
 use nova\framework\exception\AppExitException;
 use nova\plugin\orm\Db;
 use nova\plugin\orm\exception\DbExecuteError;
@@ -52,36 +53,179 @@ abstract class Dao
     {
         $this->user_key = $user_key;
         $this->dbInit();
-        $cache = new Cache();
+
         if (!empty($model)) {
             $this->model = $model;
         } elseif (!empty($child)) {
             $class = str_replace(["dao", "Dao"], ["model", "Model"], $child);
             $this->child = $child;
             if (class_exists($class)) {
-
                 $this->model = $class;
-                $table = $this->getTable();
-                $key = "table_" . $table;
-                if ($cache->get($key) == null || App::getInstance()->debug) {
-                    try {
-                        $result = $this->db->getDriver()->getDbConnect()->query(/** @lang text */ "SELECT count(*) FROM `{$table}` LIMIT 1");
-                        $table_exist = $result instanceof PDOStatement && ($result->rowCount() === 1);
-                    } catch (Throwable $exception) {
-                        if ($exception instanceof AppExitException) {
-                            throw $exception;
-                        }
-                        $table_exist = false;
-                    }
-                    if (!$table_exist) {
-                        $this->db->initTable($this, new $class(), trim($table, '`'));
-                        $cache->set("table_" . $table, true);
-                    }
-                }
+            }
+        }
+        $this->initTable();
+    }
 
+    /**
+     * 初始化表结构
+     * 检查表是否存在，不存在则创建
+     * @return bool 是否成功初始化
+     */
+    public function initTable(): bool
+    {
+        if (empty($this->model)) {
+            return false;
+        }
+
+        $cache = new Cache();
+        $table = $this->getTable();
+        $versionKey = "table_version_" . $table;
+        $modelClass = $this->model;
+        $model = new $modelClass();
+        $currentVersion = $model->getSchemaVersion();
+
+        // 获取缓存中的版本号
+        $cachedVersion = $cache->get($versionKey);
+
+        Logger::info("Model class: " . $this->model . " (version: " . $currentVersion . ")");
+
+        // 非调试模式下，有缓存版本就认为表存在
+        if (!Context::instance()->isDebug() && $cachedVersion !== null) {
+            // 只在版本不一致时进行升级
+            if ($cachedVersion < $currentVersion) {
+                return $this->upgradeTable($model, $cachedVersion, $currentVersion, $versionKey);
+            }
+            return true;
+        }
+
+        // 调试模式或无缓存时，检查表是否存在
+        try {
+            $result = $this->db->getDriver()->getDbConnect()->query(/** @lang text */ "SELECT count(*) FROM `{$table}` LIMIT 1");
+            $table_exist = $result instanceof PDOStatement && ($result->rowCount() === 1);
+        } catch (Throwable $exception) {
+            if ($exception instanceof AppExitException) {
+                throw $exception;
+            }
+            $table_exist = false;
+        }
+
+        // 表不存在，需要创建
+        if (!$table_exist) {
+            try {
+                $this->db->initTable($this, $model, trim($table, '`'));
+                $cache->set($versionKey, $currentVersion);
+                Logger::info("Initialize table {$table}: ");
+                return true;
+            } catch (Throwable $e) {
+                Logger::alert("Failed to initialize table {$table}: " . $e->getMessage(), $e->getTrace());
+                return false;
             }
         }
 
+        // 表存在，检查是否需要升级
+        if ($cachedVersion === null || $cachedVersion < $currentVersion || Context::instance()->isDebug()) {
+            return $this->upgradeTable($model, $cachedVersion ?? 1, $currentVersion, $versionKey);
+        }
+
+        return true;
+    }
+
+    /**
+     * 升级表结构
+     * @param  Model  $model       模型实例
+     * @param  int    $fromVersion 当前版本
+     * @param  int    $toVersion   目标版本
+     * @param  string $versionKey  缓存版本号的键名
+     * @return bool   是否升级成功
+     */
+    protected function upgradeTable(Model $model, int $fromVersion, int $toVersion, string $versionKey): bool
+    {
+        if ($fromVersion >= $toVersion && !Context::instance()->isDebug()) {
+            return true;
+        }
+
+        Logger::info("Upgrading table {$this->getTable()} to {$versionKey}");
+        // 获取所有升级脚本
+        $allUpgradeSql = $model->getUpgradeSql($fromVersion, $toVersion);
+        if (empty($allUpgradeSql)) {
+            // 没有升级SQL，直接更新版本号
+            $cache = new Cache();
+            $cache->set($versionKey, $toVersion);
+            return true;
+        }
+
+        // 开始事务
+        $this->affairBegin();
+
+        try {
+            $currentVersion = $fromVersion;
+
+            // 检查是否有直接从当前版本到目标版本的升级脚本
+            $directKey = "{$fromVersion}_{$toVersion}";
+            if (isset($allUpgradeSql[$directKey])) {
+                Logger::info("执行从版本 {$fromVersion} 到 {$toVersion} 的直接升级脚本");
+                foreach ($allUpgradeSql[$directKey] as $sql) {
+                    $this->execute($sql);
+                }
+                $currentVersion = $toVersion;
+            } else {
+                // 按顺序执行中间版本的升级脚本
+                $versions = [];
+
+                // 解析所有可用的版本升级路径
+                foreach (array_keys($allUpgradeSql) as $key) {
+                    if (preg_match('/^(\d+)_(\d+)$/', $key, $matches)) {
+                        $from = (int)$matches[1];
+                        $to = (int)$matches[2];
+                        $versions[$from] = $to;
+                    }
+                }
+
+                // 按顺序执行升级脚本
+                while ($currentVersion < $toVersion) {
+                    $nextVersion = $versions[$currentVersion] ?? null;
+
+                    if ($nextVersion === null) {
+                        // 找不到下一个版本的升级路径
+                        Logger::warning("无法找到从版本 {$currentVersion} 的升级路径");
+                        break;
+                    }
+
+                    $upgradeKey = "{$currentVersion}_{$nextVersion}";
+                    if (!isset($allUpgradeSql[$upgradeKey])) {
+                        Logger::warning("找不到从版本 {$currentVersion} 到 {$nextVersion} 的升级脚本");
+                        break;
+                    }
+
+                    Logger::info("执行从版本 {$currentVersion} 到 {$nextVersion} 的升级脚本");
+                    foreach ($allUpgradeSql[$upgradeKey] as $sql) {
+                        $this->execute($sql);
+                    }
+
+                    $currentVersion = $nextVersion;
+
+                    // 如果已经达到或超过目标版本，停止升级
+                    if ($currentVersion >= $toVersion) {
+                        break;
+                    }
+                }
+            }
+
+            // 提交事务
+            $this->affairCommit();
+
+            // 更新缓存中的版本号
+            $cache = new Cache();
+            $cache->set($versionKey, $currentVersion);
+
+            Logger::info("表 {$this->getTable()} 从版本 {$fromVersion} 升级到 {$currentVersion} 成功");
+            return true;
+        } catch (Throwable $e) {
+            // 回滚事务
+            $this->affairRollBack();
+            Logger::alert("升级表 {$this->getTable()} 失败: " . $e->getMessage());
+            return false;
+        }
     }
 
     /**
@@ -136,25 +280,30 @@ abstract class Dao
     /**
      * 当前操作的表
      * @return string
-     
+     * @throws DbExecuteError
      */
     public function getTable(): string
     {
+        // 如果已经设置了表名，直接返回
         if (!empty($this->table)) {
             return $this->table;
         }
-        if (!empty($this->child)) {
-            $array = explode("\\", $this->child);
-            $class = str_replace("Dao", "", end($array));
-            $pattern = '/(?<=[a-z])([A-Z])/';
-            $replacement = '_$1';
-            $this->table = strtolower(preg_replace($pattern, $replacement, $class));
+
+        // 从类名获取表名
+        $className = get_class($this);
+        if (preg_match('/(\w+)Dao$/', $className, $matches)) {
+            $tableName = strtolower($matches[1]);
+
+            // 添加用户键前缀（如果存在）
             if (!empty($this->user_key)) {
-                $this->table = $this->table . "_" . md5($this->user_key);
+                $tableName = $tableName . "_" . md5($this->user_key);
             }
+
+            $this->table = $tableName;
             return $this->table;
         }
-        throw new DbExecuteError("Unknown table name");
+
+        throw new DbExecuteError("Invalid DAO class name format. Class name must end with 'Dao'");
     }
 
     /**
@@ -190,7 +339,6 @@ abstract class Dao
     /**
      * 删除当前表
      * @return array|int
-     
      */
     public function dropTable(): int|array
     {
@@ -199,11 +347,10 @@ abstract class Dao
 
     /**
      * 数据库执行
-     * @param  string         $sql      需要执行的sql语句
-     * @param  array          $params   绑定的sql参数
-     * @param  false          $readonly 是否为查询
+     * @param  string    $sql      需要执行的sql语句
+     * @param  array     $params   绑定的sql参数
+     * @param  false     $readonly 是否为查询
      * @return array|int
-     
      */
     protected function execute(string $sql, array $params = [], bool $readonly = false): int|array
     {
@@ -213,7 +360,6 @@ abstract class Dao
     /**
      * 清空当前表
      * @return array|int
-     
      */
     public function emptyTable(): int|array
     {
@@ -262,12 +408,15 @@ abstract class Dao
      */
     private function getAutoPrimary(Model $old_model): ?string
     {
-        $primary_keys = $old_model->getPrimaryKey() instanceof SqlKey ? [$old_model->getPrimaryKey()] : $old_model->getPrimaryKey();
-        /**
-         * @var $value SqlKey
-         */
+        $primaryKey = $old_model->getPrimaryKey();
+        $primary_keys = $primaryKey instanceof SqlKey ? [$primaryKey] : $primaryKey;
+
+        if (!is_array($primary_keys)) {
+            return null;
+        }
+
         foreach ($primary_keys as $value) {
-            if ($value->auto) {
+            if ($value instanceof SqlKey && $value->auto) {
                 return $value->name;
             }
         }
@@ -312,16 +461,19 @@ abstract class Dao
      */
     private function getPrimaryCondition(Model $old_model): array
     {
-        $primary_keys = $old_model->getPrimaryKey() instanceof SqlKey ? [$old_model->getPrimaryKey()] : $old_model->getPrimaryKey();
+        $primaryKey = $old_model->getPrimaryKey();
+        $primary_keys = $primaryKey instanceof SqlKey ? [$primaryKey] : $primaryKey;
+
+        if (!is_array($primary_keys)) {
+            return [];
+        }
+
         $condition = [];
-        /**
-         * @var $value SqlKey
-         */
         foreach ($primary_keys as $value) {
-            //key
-            $name = $value->name;
-            //获取主键
-            $condition[$name] = $old_model->$name;
+            if ($value instanceof SqlKey) {
+                $name = $value->name;
+                $condition[$name] = $old_model->$name;
+            }
         }
         return $condition;
     }
@@ -398,7 +550,6 @@ abstract class Dao
      * @param  bool                          $page
      * @param  array|string|null             $orderBy
      * @return array
-     
      * @throws DbFieldError|AppExitException
      */
     public function getAll(?array $fields = [], array $where = [], ?int $start = null, int $size = 10, bool $page = false, array|string $orderBy = null): array
@@ -445,9 +596,8 @@ abstract class Dao
 
     /**
      * 判断是否存在
-     * @param  array          $where
+     * @param  array $where
      * @return bool
-     
      */
     public function exists(array $where = []): bool
     {

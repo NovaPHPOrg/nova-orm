@@ -26,7 +26,6 @@ namespace nova\plugin\orm\operation;
 
 use Exception;
 use nova\plugin\orm\Db;
-use nova\plugin\orm\exception\DbExecuteError;
 use nova\plugin\orm\exception\DbFieldError;
 use nova\plugin\orm\object\Field;
 
@@ -123,10 +122,9 @@ class SelectOperation extends BaseOperation
 
     /**
      * 提交
-     * @param  int            $total
-     * @param  bool           $object
+     * @param  int       $total
+     * @param  bool      $object
      * @return array|int
-     
      */
     public function commit(int &$total = 0, bool $object = true): array|int
     {
@@ -168,7 +166,7 @@ class SelectOperation extends BaseOperation
 
     /**
      * 统计查出来的数据的总数
-     * @param  array                       $conditions 统计条件
+     * @param  array $conditions 统计条件
      * @return int
      |DbFieldError
      */

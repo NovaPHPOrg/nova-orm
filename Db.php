@@ -24,15 +24,13 @@ declare(strict_types=1);
 
 namespace nova\plugin\orm;
 
-use nova\framework\App;
+use function nova\framework\config;
 
 use nova\framework\core\Context;
 use nova\framework\core\Logger;
-use nova\framework\exception\ErrorHandler;
-use nova\framework\http\Response;
-use function nova\framework\config;
-
 use nova\framework\exception\AppExitException;
+
+use nova\framework\http\Response;
 use nova\plugin\orm\driver\Driver;
 use nova\plugin\orm\exception\DbExecuteError;
 use nova\plugin\orm\object\Dao;
@@ -97,11 +95,10 @@ class Db
 
     /**
      * 数据表初始化
-     * @param  Dao            $dao
-     * @param  Model          $model
-     * @param  string         $table
+     * @param  Dao    $dao
+     * @param  Model  $model
+     * @param  string $table
      * @return void
-     
      */
     public function initTable(Dao $dao, Model $model, string $table): void
     {
@@ -113,9 +110,9 @@ class Db
 
     /**
      * 数据库执行
-     * @param  string         $sql      需要执行的sql语句
-     * @param  array          $params   绑定的sql参数
-     * @param  false          $readonly 是否为查询
+     * @param  string    $sql      需要执行的sql语句
+     * @param  array     $params   绑定的sql参数
+     * @param  false     $readonly 是否为查询
      * @return array|int
      */
     public function execute(string $sql, array $params = [], bool $readonly = false): int|array
@@ -280,8 +277,8 @@ class Db
 
     /**
      * 导出数据表
-     * @param  ?string        $output      输出路径
-     * @param  bool           $only_struct 是否只导出结构
+     * @param  ?string $output      输出路径
+     * @param  bool    $only_struct 是否只导出结构
      * @return string
      */
     public function export(string $output = null, bool $only_struct = false): string

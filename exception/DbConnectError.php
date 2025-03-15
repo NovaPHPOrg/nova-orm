@@ -25,7 +25,7 @@ declare(strict_types=1);
 namespace nova\plugin\orm\exception;
 
 use exception;
-use nova\framework\log\Logger;
+use nova\framework\core\Logger;
 
 class DbConnectError extends exception
 {

@@ -25,7 +25,7 @@ declare(strict_types=1);
 namespace nova\plugin\orm\exception;
 
 use Exception;
-use nova\framework\log\Logger;
+use nova\framework\core\Logger;
 
 class DbFieldError extends Exception
 {

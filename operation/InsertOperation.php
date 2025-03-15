@@ -52,7 +52,7 @@ class InsertOperation extends BaseOperation
 
     /**
      * 设置查询条件
-     * @param array $conditions 条件内容，必须是数组,格式如下["name"=>"张三","i > :hello",":hello"=>"hi"]
+     * @param  array        $conditions 条件内容，必须是数组,格式如下["name"=>"张三","i > :hello",":hello"=>"hi"]
      * @throws DbFieldError
      */
     public function where(array $conditions): BaseOperation
@@ -65,7 +65,6 @@ class InsertOperation extends BaseOperation
      * @param                  $kv       array 数组对应的插入值
      * @param                  $udp_keys array 需要更新的字段
      * @return InsertOperation
-     
      */
     public function keyValue(array $kv, array $udp_keys = []): InsertOperation
     {
@@ -75,7 +74,7 @@ class InsertOperation extends BaseOperation
     }
 
     /**
-     
+
      */
     public function keyValues(array $kv, array $udp_keys = []): InsertOperation
     {
@@ -115,7 +114,7 @@ class InsertOperation extends BaseOperation
 
     /**
      * 需要插入的Key
-     * @param array $key
+     * @param  array  $key
      * @param  ?array $columns
      * @return $this
      */
