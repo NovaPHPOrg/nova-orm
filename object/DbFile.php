@@ -15,7 +15,8 @@ declare(strict_types=1);
 
 namespace nova\plugin\orm\object;
 
-use nova\framework\text\ArgObject;
+
+use nova\framework\core\ArgObject;
 
 /**
  * Package: nova\plugin\orm\object

@@ -24,6 +24,9 @@ declare(strict_types=1);
 
 namespace nova\plugin\orm\operation;
 
+use nova\plugin\orm\exception\DbExecuteError;
+use nova\plugin\orm\exception\DbFieldError;
+
 class DeleteOperation extends BaseOperation
 {
     public function __construct(&$db, $model)
@@ -37,8 +40,9 @@ class DeleteOperation extends BaseOperation
 
     /**
      * 修改Where语句
-     * @param  array $conditions
+     * @param array $conditions
      * @return $this
+     * @throws DbFieldError
      */
     public function where(array $conditions): DeleteOperation
     {
@@ -47,8 +51,9 @@ class DeleteOperation extends BaseOperation
 
     /**
      * 提交查询语句
+     
      */
-    public function commit()
+    public function commit(): int|array
     {
         return parent::__commit();
     }

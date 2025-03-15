@@ -25,7 +25,7 @@ declare(strict_types=1);
 namespace nova\plugin\orm\operation;
 
 use nova\framework\cache\Cache;
-use nova\framework\log\Logger;
+use nova\framework\core\Logger;
 use nova\plugin\orm\Db;
 use nova\plugin\orm\exception\DbExecuteError;
 use nova\plugin\orm\exception\DbFieldError;
@@ -99,7 +99,7 @@ abstract class BaseOperation
      * 提交
      * @param  bool           $readonly
      * @return array|int
-     * @throws DbExecuteError
+     
      */
     protected function __commit(bool $readonly = false): int|array
     {
@@ -120,7 +120,7 @@ abstract class BaseOperation
             $result = $cache->get("sql/$tableKey/$key");
         }
         if (empty($result)) {
-            Logger::info("SQL: $this->buildSql");
+            Logger::info("SQL",[ $this->buildSql ]);
             $result = $this->db->execute($this->transferSql, $this->bind_param, $readonly);
             if ($readonly) {
                 //将数据存入缓存
@@ -257,7 +257,7 @@ abstract class BaseOperation
 
     /**
      * 将数据集转换为对象
-     * @throws DbExecuteError
+     
      */
     protected function translate2Model(string $model, array $data): ?array
     {

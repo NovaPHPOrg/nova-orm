@@ -26,11 +26,13 @@ namespace nova\plugin\orm;
 
 use nova\framework\App;
 
+use nova\framework\core\Context;
+use nova\framework\core\Logger;
+use nova\framework\exception\ErrorHandler;
+use nova\framework\http\Response;
 use function nova\framework\config;
 
 use nova\framework\exception\AppExitException;
-use nova\framework\log\Logger;
-use nova\framework\request\Response;
 use nova\plugin\orm\driver\Driver;
 use nova\plugin\orm\exception\DbExecuteError;
 use nova\plugin\orm\object\Dao;
@@ -99,7 +101,7 @@ class Db
      * @param  Model          $model
      * @param  string         $table
      * @return void
-     * @throws DbExecuteError
+     
      */
     public function initTable(Dao $dao, Model $model, string $table): void
     {
@@ -115,7 +117,6 @@ class Db
      * @param  array          $params   绑定的sql参数
      * @param  false          $readonly 是否为查询
      * @return array|int
-     * @throws DbExecuteError
      */
     public function execute(string $sql, array $params = [], bool $readonly = false): int|array
     {
@@ -166,7 +167,7 @@ class Db
                 $sql
             );
         }
-        if (App::getInstance()->debug) {
+        if (Context::instance()->isDebug()) {
             $end = microtime(true) - $GLOBALS["__nova_db_sql_start__"];
             $t = round($end * 1000, 4);
             Logger::info("sql run time => ". $t . "ms");
@@ -282,7 +283,6 @@ class Db
      * @param  ?string        $output      输出路径
      * @param  bool           $only_struct 是否只导出结构
      * @return string
-     * @throws DbExecuteError
      */
     public function export(string $output = null, bool $only_struct = false): string
     {
@@ -293,7 +293,7 @@ class Db
             $tabList[] = $value["Tables_in_dx"];
         }
         $info = "-- ----------------------------\r\n";
-        $info .= "-- Powered by CleanPHP\r\n";
+        $info .= "-- Powered by NovaPHP\r\n";
         $info .= "-- ----------------------------\r\n";
         $info .= "-- ----------------------------\r\n";
         $info .= "-- 日期：" . date("Y-m-d H:i:s", time()) . "\r\n";

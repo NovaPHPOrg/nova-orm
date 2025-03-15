@@ -26,6 +26,7 @@ namespace nova\plugin\orm\operation;
 
 use nova\plugin\orm\Db;
 use nova\plugin\orm\exception\DbExecuteError;
+use nova\plugin\orm\exception\DbFieldError;
 
 class InsertOperation extends BaseOperation
 {
@@ -52,6 +53,7 @@ class InsertOperation extends BaseOperation
     /**
      * 设置查询条件
      * @param array $conditions 条件内容，必须是数组,格式如下["name"=>"张三","i > :hello",":hello"=>"hi"]
+     * @throws DbFieldError
      */
     public function where(array $conditions): BaseOperation
     {
@@ -63,6 +65,7 @@ class InsertOperation extends BaseOperation
      * @param                  $kv       array 数组对应的插入值
      * @param                  $udp_keys array 需要更新的字段
      * @return InsertOperation
+     
      */
     public function keyValue(array $kv, array $udp_keys = []): InsertOperation
     {
@@ -71,6 +74,9 @@ class InsertOperation extends BaseOperation
         return $this->keys($key, $udp_keys)->values([$value]);
     }
 
+    /**
+     
+     */
     public function keyValues(array $kv, array $udp_keys = []): InsertOperation
     {
         $key = array_keys($kv[0]);
@@ -109,7 +115,7 @@ class InsertOperation extends BaseOperation
 
     /**
      * 需要插入的Key
-     * @param  array  $key
+     * @param array $key
      * @param  ?array $columns
      * @return $this
      */
