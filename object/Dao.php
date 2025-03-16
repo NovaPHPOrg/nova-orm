@@ -138,7 +138,7 @@ abstract class Dao
      * @param  string $versionKey  缓存版本号的键名
      * @return bool   是否升级成功
      */
-    protected function upgradeTable(Model $model, int $fromVersion, int $toVersion, string $versionKey): bool
+    public function upgradeTable(Model $model, int $fromVersion, int $toVersion, string $versionKey): bool
     {
         if ($fromVersion >= $toVersion && !Context::instance()->isDebug()) {
             return true;
@@ -272,7 +272,7 @@ abstract class Dao
      * 更新
      * @return UpdateOperation
      */
-    protected function update(): UpdateOperation
+    public function update(): UpdateOperation
     {
         return (new UpdateOperation($this->db, $this->model))->table($this->getTable());
     }
@@ -321,7 +321,7 @@ abstract class Dao
      * @return SelectOperation
      * @throws DbFieldError|DbExecuteError
      */
-    protected function select(...$field): SelectOperation
+    public function select(...$field): SelectOperation
     {
         return (new SelectOperation($this->db, $this->model, ...$field))->table($this->getTable());
     }
@@ -352,7 +352,7 @@ abstract class Dao
      * @param  false     $readonly 是否为查询
      * @return array|int
      */
-    protected function execute(string $sql, array $params = [], bool $readonly = false): int|array
+    public function execute(string $sql, array $params = [], bool $readonly = false): int|array
     {
         return $this->db->execute($sql, $params, $readonly);
     }
@@ -428,7 +428,7 @@ abstract class Dao
      * @param  int             $model
      * @return InsertOperation
      */
-    protected function insert(int $model = InsertOperation::INSERT_NORMAL): InsertOperation
+    public function insert(int $model = InsertOperation::INSERT_NORMAL): InsertOperation
     {
         return (new InsertOperation($this->db, $this->model, $model))->table($this->getTable());
     }
@@ -493,7 +493,7 @@ abstract class Dao
      * 删除
      * @return DeleteOperation
      */
-    protected function delete(): DeleteOperation
+    public function delete(): DeleteOperation
     {
         return (new DeleteOperation($this->db, $this->model))->table($this->getTable());
     }
@@ -504,7 +504,7 @@ abstract class Dao
      * @param  array      $condition 查询条件
      * @return mixed|null
      */
-    protected function find(Field $field = null, array $condition = []): mixed
+    public function find(Field $field = null, array $condition = []): mixed
     {
         if ($field === null) {
             $field = new Field();
@@ -520,25 +520,33 @@ abstract class Dao
     /**
      * 事务开始
      */
-    protected function affairBegin(): void
+    public function transactionBegin(): void
     {
-        $this->db->execute("BEGIN");
+        $this->db->connection()->beginTransaction();
     }
 
     /**
      * 事务回滚
      */
-    protected function affairRollBack(): void
+    public function transactionRollBack(): void
     {
-        $this->db->execute("ROLLBACK");
+        $this->db->connection()->rollBack();
     }
 
     /**
      * 事务提交
      */
-    protected function affairCommit(): void
+    public function transactionCommit(): void
     {
-        $this->db->execute("COMMIT");
+        $this->db->connection()->commit();
+    }
+
+    /**
+     * 是否在事务里面
+     * @return bool
+     */
+    public function inTransaction(): bool{
+      return  $this->db->connection()->inTransaction();
     }
 
     /**

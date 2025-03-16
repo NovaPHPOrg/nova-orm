@@ -340,4 +340,9 @@ class Db
         return $info;
     }
 
+    public function connection():PDO
+    {
+        return $this->db->getDbConnect();
+    }
+
 }
