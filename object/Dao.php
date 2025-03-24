@@ -545,8 +545,9 @@ abstract class Dao
      * 是否在事务里面
      * @return bool
      */
-    public function inTransaction(): bool{
-      return  $this->db->connection()->inTransaction();
+    public function inTransaction(): bool
+    {
+        return  $this->db->connection()->inTransaction();
     }
 
     /**
