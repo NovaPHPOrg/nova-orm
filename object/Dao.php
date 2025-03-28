@@ -155,7 +155,7 @@ abstract class Dao
         }
 
         // 开始事务
-        $this->affairBegin();
+        $this->transactionBegin();
 
         try {
             $currentVersion = $fromVersion;
@@ -212,7 +212,7 @@ abstract class Dao
             }
 
             // 提交事务
-            $this->affairCommit();
+            $this->transactionCommit();
 
             // 更新缓存中的版本号
             $cache = new Cache();
@@ -222,7 +222,7 @@ abstract class Dao
             return true;
         } catch (Throwable $e) {
             // 回滚事务
-            $this->affairRollBack();
+            $this->transactionRollBack();
             Logger::alert("升级表 {$this->getTable()} 失败: " . $e->getMessage());
             return false;
         }
