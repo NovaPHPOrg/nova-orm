@@ -592,13 +592,7 @@ abstract class Dao
         }
 
         $ret['total'] = $total;
-        if ($page) {
-            array_walk($result, function (&$value, $key, $arr) {
-                $arr['ret']['data'][] = $value->toArray();
-            }, ['ret' => &$ret]);
-        } else {
-            $ret['data'] = $result;
-        }
+        $ret['data'] = $result;
         return $ret;
 
     }
