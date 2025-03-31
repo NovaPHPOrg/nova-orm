@@ -39,7 +39,6 @@ use nova\plugin\orm\object\Model;
 use PDO;
 use PDOException;
 use PDOStatement;
-use ReflectionObject;
 
 class Db
 {
@@ -127,7 +126,7 @@ class Db
                  * @var $sth PDOStatement
                  */
                 $connect = $this->db->getDbConnect();
-                
+
                 $sth = $connect->prepare($sql);
 
                 if (!$sth) {
@@ -155,18 +154,18 @@ class Db
 
                 if ($sth->execute()) {
                     $ret = $readonly ? $sth->fetchAll(PDO::FETCH_ASSOC) : $sth->rowCount();
-                    
+
                     if (Context::instance()->isDebug()) {
                         $end = microtime(true) - $GLOBALS["__nova_db_sql_start__"];
                         $t = round($end * 1000, 4);
                         Logger::info("sql run time => ". $t . "ms");
                     }
-                    
+
                     if ($ret !== null) {
                         return $ret;
                     }
                 }
-                
+
                 throw new DbExecuteError(
                     sprintf(
                         "Run Sql Error：\r\n%s\r\n\r\nError Info：%s",
@@ -175,34 +174,34 @@ class Db
                     ),
                     $sql
                 );
-                
+
             } catch (PDOException $exception) {
                 $attempts++;
-                
+
                 // 如果是连接丢失错误并且还有重试机会，进行重连
-                if ($attempts < $maxRetries && 
+                if ($attempts < $maxRetries &&
                     (str_contains($exception->getMessage(), 'server has gone away') ||
                         str_contains($exception->getMessage(), 'Lost connection') ||
                         str_contains($exception->getMessage(), 'Error connecting') ||
                      $exception->getCode() == 2006 || // server has gone away
                      $exception->getCode() == 2013)) { // lost connection
-                    
+
                     Logger::warning("尝试 $attempts/$maxRetries: 重新连接数据库，原因: " . $exception->getMessage());
-                    
+
                     // 从配置中重新获取数据库配置，创建新的数据库连接
                     $dbFile = new DbFile(config('db'));
                     $driver = get_class($this->db);
                     $this->db = new $driver($dbFile);
-                    
+
                     // 更新实例缓存
                     $hash = $dbFile->hash();
                     self::$instance[$hash] = $this;
-                    
+
                     // 等待一段时间后重试
                     usleep(100000 * $attempts); // 100ms, 200ms, 300ms...
                     continue;
                 }
-                
+
                 // 如果错误不可恢复或者重试次数已用完
                 throw new DbExecuteError(
                     sprintf(
@@ -214,7 +213,7 @@ class Db
                 );
             }
         }
-        
+
         // 所有重试都失败
         throw new DbExecuteError(
             sprintf(
