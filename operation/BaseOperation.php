@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace nova\plugin\orm\operation;
 
-use nova\framework\cache\Cache;
+use nova\framework\core\Context;
 use nova\framework\core\Logger;
 use nova\plugin\orm\Db;
 use nova\plugin\orm\exception\DbExecuteError;
@@ -109,7 +109,7 @@ abstract class BaseOperation
 
         $this->buildSql = $this->buildRunSQL($this->transferSql, $this->bind_param);
 
-        $cache = new Cache();
+        $cache = Context::instance()->cache;
         $tableKey = md5($this->getTable());
         $key = $this->getCacheKey();
         $result = null;

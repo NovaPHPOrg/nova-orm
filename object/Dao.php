@@ -24,7 +24,6 @@ declare(strict_types=1);
 
 namespace nova\plugin\orm\object;
 
-use nova\framework\cache\Cache;
 use nova\framework\core\Context;
 use nova\framework\core\Logger;
 use nova\framework\exception\AppExitException;
@@ -77,7 +76,7 @@ abstract class Dao
             return false;
         }
 
-        $cache = new Cache();
+        $cache = Context::instance()->cache;
         $table = $this->getTable();
         $versionKey = "table_version_" . $table;
         $modelClass = $this->model;
@@ -149,7 +148,7 @@ abstract class Dao
         $allUpgradeSql = $model->getUpgradeSql($fromVersion, $toVersion);
         if (empty($allUpgradeSql)) {
             // 没有升级SQL，直接更新版本号
-            $cache = new Cache();
+            $cache = Context::instance()->cache;
             $cache->set($versionKey, $toVersion);
             return true;
         }
@@ -215,7 +214,7 @@ abstract class Dao
             $this->transactionCommit();
 
             // 更新缓存中的版本号
-            $cache = new Cache();
+            $cache = Context::instance()->cache;
             $cache->set($versionKey, $currentVersion);
 
             Logger::info("表 {$this->getTable()} 从版本 {$fromVersion} 升级到 {$currentVersion} 成功");
