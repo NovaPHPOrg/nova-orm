@@ -152,7 +152,7 @@ abstract class Dao
         Logger::info("Upgrading table {$this->getTable()} from v{$fromVersion} to v{$toVersion}");
 
         // 拿到所有 fromVersion → toVersion 范围内的脚本
-        $allUpgradeSql = $model->getUpgradeSql($fromVersion, $toVersion);
+        $allUpgradeSql = $model->getUpgradeSql();
         // 如果没有任何脚本，直接更新版本号并返回
         if (empty($allUpgradeSql)) {
             Context::instance()->cache->set($versionKey, $toVersion);

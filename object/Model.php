@@ -44,11 +44,9 @@ abstract class Model extends ArgObject
     /**
      * 获取表结构变更SQL
      * 当表结构版本变更时，可以通过此方法提供升级SQL
-     * @param  int   $fromVersion 当前版本
-     * @param  int   $toVersion   目标版本
      * @return array 包含升级SQL语句的数组
      */
-    public function getUpgradeSql(int $fromVersion, int $toVersion): array
+    public function getUpgradeSql(): array
     {
         return []; // 默认不需要升级，子类可以覆盖此方法
     }
