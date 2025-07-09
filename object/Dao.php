@@ -130,102 +130,63 @@ abstract class Dao
     }
 
     /**
-     * 升级表结构
-     * @param  Model  $model       模型实例
-     * @param  int    $fromVersion 当前版本
-     * @param  int    $toVersion   目标版本
-     * @param  string $versionKey  缓存版本号的键名
+     * 升级表结构（按版本 +1 顺序执行）
+     *
+     * @param Model  $model       模型实例，需实现 getUpgradeSql($from, $to)：返回 [
+     *                            "1_2" => [ 'ALTER ...', ... ],
+     *                            "2_3" => [ ... ],
+     *                            …
+     *                          ]
+     * @param int    $fromVersion 当前版本（缓存中读到）
+     * @param int    $toVersion   目标版本（配置里要求的最新版本）
+     * @param string $versionKey  缓存版本号的键名，用于升级后写入缓存
      * @return bool   是否升级成功
      */
     public function upgradeTable(Model $model, int $fromVersion, int $toVersion, string $versionKey): bool
     {
+        // 如果已经是最新，且非调试模式，直接返回
         if ($fromVersion >= $toVersion && !Context::instance()->isDebug()) {
             return true;
         }
 
-        Logger::info("Upgrading table {$this->getTable()} to {$versionKey}");
-        // 获取所有升级脚本
+        Logger::info("Upgrading table {$this->getTable()} from v{$fromVersion} to v{$toVersion}");
+
+        // 拿到所有 fromVersion → toVersion 范围内的脚本
         $allUpgradeSql = $model->getUpgradeSql($fromVersion, $toVersion);
+        // 如果没有任何脚本，直接更新版本号并返回
         if (empty($allUpgradeSql)) {
-            // 没有升级SQL，直接更新版本号
-            $cache = Context::instance()->cache;
-            $cache->set($versionKey, $toVersion);
+            Context::instance()->cache->set($versionKey, $toVersion);
             return true;
         }
 
-        // 开始事务
         $this->transactionBegin();
-
         try {
-            $currentVersion = $fromVersion;
-
-            // 检查是否有直接从当前版本到目标版本的升级脚本
-            $directKey = "{$fromVersion}_{$toVersion}";
-            if (isset($allUpgradeSql[$directKey])) {
-                Logger::info("执行从版本 {$fromVersion} 到 {$toVersion} 的直接升级脚本");
-                foreach ($allUpgradeSql[$directKey] as $sql) {
+            // 按 +1 顺序依次执行脚本
+            for ($v = $fromVersion; $v < $toVersion; $v++) {
+                $nextKey = "{$v}_" . ($v + 1);
+                if (!isset($allUpgradeSql[$nextKey])) {
+                    throw new \RuntimeException("Missing upgrade script for version {$v} → " . ($v + 1));
+                }
+                Logger::info("Executing upgrade from v{$v} to v" . ($v + 1));
+                foreach ($allUpgradeSql[$nextKey] as $sql) {
                     $this->execute($sql);
-                }
-                $currentVersion = $toVersion;
-            } else {
-                // 按顺序执行中间版本的升级脚本
-                $versions = [];
-
-                // 解析所有可用的版本升级路径
-                foreach (array_keys($allUpgradeSql) as $key) {
-                    if (preg_match('/^(\d+)_(\d+)$/', $key, $matches)) {
-                        $from = (int)$matches[1];
-                        $to = (int)$matches[2];
-                        $versions[$from] = $to;
-                    }
-                }
-
-                // 按顺序执行升级脚本
-                while ($currentVersion < $toVersion) {
-                    $nextVersion = $versions[$currentVersion] ?? null;
-
-                    if ($nextVersion === null) {
-                        // 找不到下一个版本的升级路径
-                        Logger::warning("无法找到从版本 {$currentVersion} 的升级路径");
-                        break;
-                    }
-
-                    $upgradeKey = "{$currentVersion}_{$nextVersion}";
-                    if (!isset($allUpgradeSql[$upgradeKey])) {
-                        Logger::warning("找不到从版本 {$currentVersion} 到 {$nextVersion} 的升级脚本");
-                        break;
-                    }
-
-                    Logger::info("执行从版本 {$currentVersion} 到 {$nextVersion} 的升级脚本");
-                    foreach ($allUpgradeSql[$upgradeKey] as $sql) {
-                        $this->execute($sql);
-                    }
-
-                    $currentVersion = $nextVersion;
-
-                    // 如果已经达到或超过目标版本，停止升级
-                    if ($currentVersion >= $toVersion) {
-                        break;
-                    }
                 }
             }
 
-            // 提交事务
             $this->transactionCommit();
 
-            // 更新缓存中的版本号
-            $cache = Context::instance()->cache;
-            $cache->set($versionKey, $currentVersion);
+            // 全部成功后，把版本号写入缓存
+            Context::instance()->cache->set($versionKey, $toVersion);
+            Logger::info("Table {$this->getTable()} successfully upgraded to v{$toVersion}");
 
-            Logger::info("表 {$this->getTable()} 从版本 {$fromVersion} 升级到 {$currentVersion} 成功");
             return true;
-        } catch (Throwable $e) {
-            // 回滚事务
+        } catch (\Throwable $e) {
             $this->transactionRollBack();
-            Logger::alert("升级表 {$this->getTable()} 失败: " . $e->getMessage());
+            Logger::alert("Failed to upgrade table {$this->getTable()}: " . $e->getMessage());
             return false;
         }
     }
+
 
     /**
      * 数据库初始化
