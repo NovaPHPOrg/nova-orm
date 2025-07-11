@@ -132,14 +132,14 @@ abstract class Dao
     /**
      * 升级表结构（按版本 +1 顺序执行）
      *
-     * @param Model  $model       模型实例，需实现 getUpgradeSql($from, $to)：返回 [
-     *                            "1_2" => [ 'ALTER ...', ... ],
-     *                            "2_3" => [ ... ],
-     *                            …
-     *                          ]
-     * @param int    $fromVersion 当前版本（缓存中读到）
-     * @param int    $toVersion   目标版本（配置里要求的最新版本）
-     * @param string $versionKey  缓存版本号的键名，用于升级后写入缓存
+     * @param  Model  $model       模型实例，需实现 getUpgradeSql($from, $to)：返回 [
+     *                             "1_2" => [ 'ALTER ...', ... ],
+     *                             "2_3" => [ ... ],
+     *                             …
+     *                             ]
+     * @param  int    $fromVersion 当前版本（缓存中读到）
+     * @param  int    $toVersion   目标版本（配置里要求的最新版本）
+     * @param  string $versionKey  缓存版本号的键名，用于升级后写入缓存
      * @return bool   是否升级成功
      */
     public function upgradeTable(Model $model, int $fromVersion, int $toVersion, string $versionKey): bool
@@ -186,7 +186,6 @@ abstract class Dao
             return false;
         }
     }
-
 
     /**
      * 数据库初始化
