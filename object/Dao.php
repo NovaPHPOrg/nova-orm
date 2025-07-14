@@ -206,10 +206,11 @@ abstract class Dao
     public static function getInstance($user_key = null): Dao
     {
         $cls = get_called_class();
-        $instance = self::$instances[$cls] ?? null;
+        $key = $cls.$user_key;
+        $instance = self::$instances[$key] ?? null;
         if (empty($instance)) {
             $instance = new static(null, $cls, $user_key);
-            self::$instances[$cls] = $instance;
+            self::$instances[$key] = $instance;
         }
         return $instance;
     }

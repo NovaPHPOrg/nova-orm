@@ -156,7 +156,6 @@ class SelectOperation extends BaseOperation
             return $result;
         }
         if ($this->model !== null) {
-
             return $this->translate2Model($this->model, $result);
         } else {
             return $result;
