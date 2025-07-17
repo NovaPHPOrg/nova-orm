@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace nova\plugin\orm\driver;
 
-use nova\plugin\orm\object\DbFile;
+use nova\plugin\orm\object\DbConfig;
 use nova\plugin\orm\object\Model;
 use nova\plugin\orm\object\SqlKey;
 use PDO;
@@ -34,9 +34,9 @@ abstract class Driver
     protected ?PDO $pdo = null;
 
     /**
-     * @param DbFile $dbFile 数据库配置类型
+     * @param DbConfig $dbFile 数据库配置类型
      */
-    abstract public function __construct(DbFile $dbFile);
+    abstract public function __construct(DbConfig $dbFile);
 
     /**
      * 主键渲染

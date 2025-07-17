@@ -34,7 +34,7 @@ use nova\framework\http\Response;
 use nova\plugin\orm\driver\Driver;
 use nova\plugin\orm\exception\DbExecuteError;
 use nova\plugin\orm\object\Dao;
-use nova\plugin\orm\object\DbFile;
+use nova\plugin\orm\object\DbConfig;
 use nova\plugin\orm\object\Model;
 use PDO;
 use PDOException;
@@ -46,10 +46,10 @@ class Db
 
     /**
      * 构造函数
-     * @param  DbFile           $dbFile 数据库配置类
+     * @param  DbConfig         $dbFile 数据库配置类
      * @throws AppExitException
      */
-    public function __construct(DbFile $dbFile)
+    public function __construct(DbConfig $dbFile)
     {
         if (!class_exists("PDO")) {
             throw new AppExitException(Response::asText("Please install PDO extend. https://www.php.net/manual/zh/pdo.installation.php"));
@@ -71,14 +71,14 @@ class Db
 
     /**
      * 使用指定数据库配置初始化数据库连接
-     * @param  DbFile|null      $dbFile
+     * @param  DbConfig|null    $dbFile
      * @return Db
      * @throws AppExitException
      */
-    public static function getInstance(?DbFile $dbFile = null): Db
+    public static function getInstance(?DbConfig $dbFile = null): Db
     {
         if ($dbFile === null) {
-            $dbFile = new DbFile(config('db'));
+            $dbFile = new DbConfig();
         }
 
         $hash = $dbFile->hash();
@@ -189,7 +189,7 @@ class Db
                     Logger::warning("尝试 $attempts/$maxRetries: 重新连接数据库，原因: " . $exception->getMessage());
 
                     // 从配置中重新获取数据库配置，创建新的数据库连接
-                    $dbFile = new DbFile(config('db'));
+                    $dbFile = new DbConfig(config('db'));
                     $driver = get_class($this->db);
                     $this->db = new $driver($dbFile);
 

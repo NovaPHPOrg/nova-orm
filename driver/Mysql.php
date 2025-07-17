@@ -25,7 +25,7 @@ declare(strict_types=1);
 namespace nova\plugin\orm\driver;
 
 use nova\plugin\orm\exception\DbConnectError;
-use nova\plugin\orm\object\DbFile;
+use nova\plugin\orm\object\DbConfig;
 use nova\plugin\orm\object\Model;
 use nova\plugin\orm\object\SqlKey;
 use PDO;
@@ -33,12 +33,12 @@ use PDOException;
 
 class Mysql extends Driver
 {
-    private DbFile $dbFile;
+    private DbConfig $dbFile;
 
     /**
      * @throws DbConnectError
      */
-    public function __construct(DbFile $dbFile)
+    public function __construct(DbConfig $dbFile)
     {
         if ($dbFile->charset === "utf8") {
             $dbFile->charset = "utf8mb4";

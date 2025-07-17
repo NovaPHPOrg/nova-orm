@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 namespace nova\plugin\orm\object;
 
-use nova\framework\core\ArgObject;
+use nova\framework\core\ConfigObject;
 
 /**
  * Package: nova\plugin\orm\object
@@ -25,18 +25,14 @@ use nova\framework\core\ArgObject;
  * Time : 15:24
  * Description : 数据库配置文件模板
  */
-class DbFile extends ArgObject
+class DbConfig extends ConfigObject
 {
     public string $host = "";
-    public string $type = "";
+    public string $type = "mysql";
     public int $port = 0;
     public string $username = "";
     public string $password = "";
     public string $db = "";
     public string $charset = "mb4utf8";
 
-    public function hash(): string
-    {
-        return md5($this->host . $this->type . $this->port . $this->username . $this->password . $this->db . $this->charset);
-    }
 }

@@ -189,10 +189,10 @@ abstract class Dao
 
     /**
      * 数据库初始化
-     * @param  DbFile|null $dbFile
+     * @param  DbConfig|null $dbFile
      * @return void
      */
-    protected function dbInit(?DbFile $dbFile = null): void
+    protected function dbInit(?DbConfig $dbFile = null): void
     {
         $this->db = Db::getInstance($dbFile);
     }
