@@ -141,7 +141,7 @@ class Mysql extends Driver
 
     public function renderEmpty(string $table): string
     {
-        return "TRUNCATE TABLE '$table';";
+        return "TRUNCATE TABLE `$table`;";
     }
 
     public function onInsertModel(int $model): int
