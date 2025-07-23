@@ -43,7 +43,7 @@ abstract class Dao
     protected ?string $model = null;//具体的模型
     protected string $table = "";
     private ?string $child = null;
-    private ?string $user_key = null;
+    protected ?string $user_key = null;
 
     /**
      * @param string|null $model 指定具体模型
