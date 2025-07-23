@@ -33,6 +33,6 @@ class DbConfig extends ConfigObject
     public string $username = "";
     public string $password = "";
     public string $db = "";
-    public string $charset = "mb4utf8";
+    public string $charset = "utf8mb4";
 
 }
