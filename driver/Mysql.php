@@ -84,6 +84,13 @@ class Mysql extends Driver
         $sql .= "`$primary`";
         $sql .= ")";
 
+        //设置联合唯一键
+        foreach ($model->getUnique() as $key => $value) {
+            if(is_array($value)){
+                $sql .= ",  UNIQUE KEY uk_".join("_",$value);
+            }
+        }
+
         $full = $model->getFullTextKeys();
         if (!empty($full)) {
             $sql .= ",";
