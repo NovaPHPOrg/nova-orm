@@ -87,14 +87,18 @@ class Mysql extends Driver
         //设置联合唯一键
         foreach ($model->getUnique() as $key => $value) {
             if (is_array($value)) {
-                $sql .= ",  UNIQUE KEY uk_".join("_", $value);
+                $sql .= ",  UNIQUE KEY uk_".md5(join("_", $value))."(";
+                $length = floor(764 / count($value));
+                $sql .= "`".join("`($length),`", $value)."`($length)";
+
+                $sql .= ")";
             }
         }
 
         $full = $model->getFullTextKeys();
         if (!empty($full)) {
             $sql .= ",";
-            $sql .= "FULLTEXT ( " . join(',', $full) . " ) WITH PARSER ngram";
+            $sql .= "FULLTEXT ( " . "`".join("`,`", $full)."`" . " ) WITH PARSER ngram";
         }
 
         $sql .= ')ENGINE=InnoDB DEFAULT CHARSET=' . $this->dbFile->charset . ';';

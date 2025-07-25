@@ -131,7 +131,7 @@ class Db
 
                 if (!$sth) {
                     throw new DbExecuteError(
-                        sprintf("Sql Prepare Error：%s", $sql),
+                        sprintf("Sql Prepare Error：%s", $this->highlightSQL($sql)),
                         $sql
                     );
                 }

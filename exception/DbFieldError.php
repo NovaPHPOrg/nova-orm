@@ -34,7 +34,7 @@ class DbFieldError extends Exception
     public function __construct($message = "", $field = "")
     {
         $this->field = $field;
-        Logger::error($message);
+        Logger::error(strip_tags($message));
         Logger::error("Error field: $field");
         parent::__construct($message);
     }

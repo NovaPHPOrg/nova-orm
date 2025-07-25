@@ -31,7 +31,7 @@ class DbExecuteError extends Exception
 {
     public function __construct($message = "", $sql = "")
     {
-        Logger::error($message, [$sql]);
+        Logger::error(strip_tags($message), [$sql]);
         parent::__construct($message);
     }
 }

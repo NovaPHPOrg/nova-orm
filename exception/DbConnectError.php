@@ -31,7 +31,7 @@ class DbConnectError extends exception
 {
     public function __construct($message, array $error, $tag)
     {
-        Logger::error($message);
+        Logger::error(strip_tags($message));
         Logger::error("Error info: " . implode(" , ", $error));
         parent::__construct($message);
     }
