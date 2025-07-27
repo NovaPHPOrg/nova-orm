@@ -25,7 +25,6 @@ declare(strict_types=1);
 namespace nova\plugin\orm\operation;
 
 use nova\framework\core\Context;
-use nova\framework\core\Logger;
 use nova\plugin\orm\Db;
 use nova\plugin\orm\exception\DbExecuteError;
 use nova\plugin\orm\exception\DbFieldError;
@@ -78,7 +77,6 @@ abstract class BaseOperation
         $this->opt['table_name'] = trim($table, ",");
         return $this;
     }
-
 
     /**
      *

@@ -123,20 +123,20 @@ class Db
 
     /**
      * 数据库执行
-     * @param string $sql 需要执行的sql语句
-     * @param array $params 绑定的sql参数
-     * @param false $readonly 是否为查询
+     * @param  string         $sql      需要执行的sql语句
+     * @param  array          $params   绑定的sql参数
+     * @param  false          $readonly 是否为查询
      * @return array|int
      * @throws DbExecuteError
      */
     public function execute(string $sql, array $params = [], bool $readonly = false): int|array
     {
 
-        if(Context::instance()->isDebug()){
-            $logSql = $this->buildRunSQL($sql, $params);$logSql = $this->buildRunSQL($sql, $params);
+        if (Context::instance()->isDebug()) {
+            $logSql = $this->buildRunSQL($sql, $params);
+            $logSql = $this->buildRunSQL($sql, $params);
             Logger::info("execute $logSql");
         }
-
 
         $GLOBALS['__nova_db_sql_start__'] = microtime(true);
         $maxRetries = 3; // 最大重试次数

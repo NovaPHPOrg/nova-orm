@@ -484,8 +484,8 @@ abstract class Dao
     public function transactionBegin(): void
     {
         $result = $this->db->connection()->beginTransaction();
-        if(!$result){
-            Logger::warning("start transaction error",[
+        if (!$result) {
+            Logger::warning("start transaction error", [
                 $this->db->connection()->errorInfo()
             ]);
             return;
@@ -497,7 +497,7 @@ abstract class Dao
      */
     public function transactionRollBack(): void
     {
-        if(!$this->db->connection()->inTransaction()){
+        if (!$this->db->connection()->inTransaction()) {
             Logger::warning("Not in transaction");
             return;
         }
@@ -509,7 +509,7 @@ abstract class Dao
      */
     public function transactionCommit(): void
     {
-        if(!$this->db->connection()->inTransaction()){
+        if (!$this->db->connection()->inTransaction()) {
             Logger::warning("Not in transaction");
             return;
         }
