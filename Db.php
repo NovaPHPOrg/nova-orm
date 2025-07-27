@@ -106,16 +106,38 @@ class Db
         $this->execute($this->db->renderCreateTable($model, $table));
         $dao->onCreateTable();
     }
+    public function buildRunSQL($sql, $params): string
+    {
+        $sql_default = $sql;
+        $params = array_reverse($params);
+
+        foreach ($params as $k => $v) {
+            $sql_default = match (gettype($v)) {
+                "double", "boolean", "integer" => str_replace($k, strval($v), $sql_default),
+                "NULL" => str_replace($k, "NULL", $sql_default),
+                default => str_replace($k, "'$v'", $sql_default),
+            };
+        }
+        return $sql_default;
+    }
 
     /**
      * 数据库执行
-     * @param  string    $sql      需要执行的sql语句
-     * @param  array     $params   绑定的sql参数
-     * @param  false     $readonly 是否为查询
+     * @param string $sql 需要执行的sql语句
+     * @param array $params 绑定的sql参数
+     * @param false $readonly 是否为查询
      * @return array|int
+     * @throws DbExecuteError
      */
     public function execute(string $sql, array $params = [], bool $readonly = false): int|array
     {
+
+        if(Context::instance()->isDebug()){
+            $logSql = $this->buildRunSQL($sql, $params);$logSql = $this->buildRunSQL($sql, $params);
+            Logger::info("execute $logSql");
+        }
+
+
         $GLOBALS['__nova_db_sql_start__'] = microtime(true);
         $maxRetries = 3; // 最大重试次数
         $attempts = 0;   // 当前尝试次数

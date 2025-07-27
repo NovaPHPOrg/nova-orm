@@ -182,8 +182,8 @@ abstract class Dao
 
             return true;
         } catch (\Throwable $e) {
-            $this->transactionRollBack();
             Logger::alert("Failed to upgrade table {$this->getTable()}: " . $e->getMessage());
+            $this->transactionRollBack();
             return false;
         }
     }
@@ -483,7 +483,13 @@ abstract class Dao
      */
     public function transactionBegin(): void
     {
-        $this->db->connection()->beginTransaction();
+        $result = $this->db->connection()->beginTransaction();
+        if(!$result){
+            Logger::warning("start transaction error",[
+                $this->db->connection()->errorInfo()
+            ]);
+            return;
+        }
     }
 
     /**
@@ -491,6 +497,10 @@ abstract class Dao
      */
     public function transactionRollBack(): void
     {
+        if(!$this->db->connection()->inTransaction()){
+            Logger::warning("Not in transaction");
+            return;
+        }
         $this->db->connection()->rollBack();
     }
 
@@ -499,6 +509,10 @@ abstract class Dao
      */
     public function transactionCommit(): void
     {
+        if(!$this->db->connection()->inTransaction()){
+            Logger::warning("Not in transaction");
+            return;
+        }
         $this->db->connection()->commit();
     }
 

@@ -79,20 +79,6 @@ abstract class BaseOperation
         return $this;
     }
 
-    private function buildRunSQL($sql, $params): string
-    {
-        $sql_default = $sql;
-        $params = array_reverse($params);
-
-        foreach ($params as $k => $v) {
-            $sql_default = match (gettype($v)) {
-                "double", "boolean", "integer" => str_replace($k, strval($v), $sql_default),
-                "NULL" => str_replace($k, "NULL", $sql_default),
-                default => str_replace($k, "'$v'", $sql_default),
-            };
-        }
-        return $sql_default;
-    }
 
     /**
      *
@@ -107,7 +93,7 @@ abstract class BaseOperation
             $this->translateSql();
         }
 
-        $this->buildSql = $this->buildRunSQL($this->transferSql, $this->bind_param);
+        $this->buildSql = $this->db->buildRunSQL($this->transferSql, $this->bind_param);
 
         $cache = Context::instance()->cache;
         $tableKey = md5($this->getTable());
@@ -119,7 +105,6 @@ abstract class BaseOperation
             $result = $cache->get("sql/$tableKey/$key");
         }
         if (empty($result)) {
-            Logger::info("SQL", [ $this->buildSql ]);
             $result = $this->db->execute($this->transferSql, $this->bind_param, $readonly);
             if ($readonly) {
                 //将数据存入缓存
