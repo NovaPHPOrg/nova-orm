@@ -56,10 +56,26 @@ abstract class Model extends ArgObject
         $this->fromDb = $fromDb;
         parent::__construct($item);
     }
+    function is_serialized($str): bool
+    {
+        if (!is_string($str)) {
+            return false;
+        }
+        $str = trim($str);
+
+        if ($str === 'N;') {
+            return true; // 特殊值 null
+        }
+        if (!preg_match('/^[aOsibd]:/', $str)) {
+            return false; // 必须是合法前缀
+        }
+        // 最后一个分号 / 花括号必须存在
+        return str_ends_with($str, ';') || str_ends_with($str, '}');
+    }
 
     public function onParseType(string $key, mixed &$val, mixed $demo): bool
     {
-        if ($this->fromDb && is_string($val) && (is_array($demo) || is_object($demo))) {
+        if ($this->fromDb && is_string($val) &&  $this->is_serialized($val)) {
             $val = unserialize($val);
         }
 
