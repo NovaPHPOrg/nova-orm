@@ -85,7 +85,7 @@ abstract class Dao
         $currentVersion = $model->getSchemaVersion();
 
         // 获取缓存中的版本号
-        $cachedVersion = $cache->get($versionKey, $currentVersion);
+        $cachedVersion = $cache->get($versionKey);
 
         Logger::info("Model class: " . $this->model . " (version: " . $currentVersion . ")");
 
@@ -97,6 +97,11 @@ abstract class Dao
             }
             return true;
         }
+
+        if($cachedVersion == null){
+            $cachedVersion = $currentVersion;
+        }
+
 
         // 调试模式或无缓存时，检查表是否存在
         try {
