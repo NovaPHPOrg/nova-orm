@@ -102,7 +102,7 @@ abstract class BaseOperation
             //尝试从缓存中获取数据
             $result = $cache->get("sql/$tableKey/$key");
         }
-        if (empty($result)) {
+        if (Context::instance()->isDebug() || empty($result)) {
             $result = $this->db->execute($this->transferSql, $this->bind_param, $readonly);
             if ($readonly) {
                 //将数据存入缓存
