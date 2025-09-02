@@ -98,10 +98,9 @@ abstract class Dao
             return true;
         }
 
-        if($cachedVersion == null){
+        if ($cachedVersion == null) {
             $cachedVersion = $currentVersion;
         }
-
 
         // 调试模式或无缓存时，检查表是否存在
         try {
