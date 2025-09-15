@@ -56,7 +56,7 @@ abstract class Model extends ArgObject
         $this->fromDb = $fromDb;
         parent::__construct($item);
     }
-    function is_serialized($str): bool
+    public function is_serialized($str): bool
     {
         if (!is_string($str)) {
             return false;
