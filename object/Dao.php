@@ -105,7 +105,9 @@ abstract class Dao
         // 调试模式或无缓存时，检查表是否存在
         try {
             $result = $this->db->getDriver()->getDbConnect()->query(/** @lang text */ "SELECT count(*) FROM `{$table}` LIMIT 1");
-            $table_exist = $result instanceof PDOStatement && ($result->rowCount() === 1);
+            // 对于部分驱动（如 SQLite），SELECT 的 rowCount() 可能返回 0。
+            // 只要查询未抛出异常，即可认为表已存在。
+            $table_exist = $result instanceof PDOStatement;
         } catch (Throwable $exception) {
             if ($exception instanceof AppExitException) {
                 throw $exception;
