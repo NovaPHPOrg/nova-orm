@@ -93,7 +93,7 @@ abstract class Dao
         if (!Context::instance()->isDebug() && $cachedVersion !== null) {
             // 只在版本不一致时进行升级
             if ($cachedVersion < $currentVersion) {
-                return $this->upgradeTable($model, $cachedVersion, $currentVersion, $versionKey);
+                 $this->upgradeTable($model, $cachedVersion, $currentVersion, $versionKey);
             }
             return true;
         }
@@ -130,7 +130,7 @@ abstract class Dao
 
         // 表存在，检查是否需要升级
         if ($cachedVersion === null || $cachedVersion < $currentVersion || Context::instance()->isDebug()) {
-            return $this->upgradeTable($model, $cachedVersion ?? 1, $currentVersion, $versionKey);
+             $this->upgradeTable($model, $cachedVersion ?? 1, $currentVersion, $versionKey);
         }
 
         return true;
@@ -139,21 +139,22 @@ abstract class Dao
     /**
      * 升级表结构（按版本 +1 顺序执行）
      *
-     * @param  Model  $model       模型实例，需实现 getUpgradeSql($from, $to)：返回 [
+     * @param Model $model 模型实例，需实现 getUpgradeSql($from, $to)：返回 [
      *                             "1_2" => [ 'ALTER ...', ... ],
      *                             "2_3" => [ ... ],
      *                             …
      *                             ]
-     * @param  int    $fromVersion 当前版本（缓存中读到）
-     * @param  int    $toVersion   目标版本（配置里要求的最新版本）
-     * @param  string $versionKey  缓存版本号的键名，用于升级后写入缓存
-     * @return bool   是否升级成功
+     * @param int $fromVersion 当前版本（缓存中读到）
+     * @param int $toVersion 目标版本（配置里要求的最新版本）
+     * @param string $versionKey 缓存版本号的键名，用于升级后写入缓存
+     * @return void 是否升级成功
+     * @throws DbExecuteError
      */
-    public function upgradeTable(Model $model, int $fromVersion, int $toVersion, string $versionKey): bool
+    public function upgradeTable(Model $model, int $fromVersion, int $toVersion, string $versionKey): void
     {
         // 如果已经是最新，且非调试模式，直接返回
         if ($fromVersion >= $toVersion && !Context::instance()->isDebug()) {
-            return true;
+            return;
         }
 
         Logger::info("Upgrading table {$this->getTable()} from v{$fromVersion} to v{$toVersion}");
@@ -163,38 +164,26 @@ abstract class Dao
         // 如果没有任何脚本，直接更新版本号并返回
         if (empty($allUpgradeSql)) {
             Context::instance()->cache->set($versionKey, $toVersion);
-            return true;
+            return;
         }
-
-        $this->transactionBegin();
-        try {
-            // 按 +1 顺序依次执行脚本
-            for ($v = $fromVersion; $v < $toVersion; $v++) {
-                $nextKey = "{$v}_" . ($v + 1);
-                if (!isset($allUpgradeSql[$nextKey])) {
-                    throw new \RuntimeException("Missing upgrade script for version {$v} → " . ($v + 1));
-                }
-                Logger::info("Executing upgrade from v{$v} to v" . ($v + 1));
-                foreach ($allUpgradeSql[$nextKey] as $sql) {
-                    // 支持 {table} 占位符替换，用于分表场景
-                    $tableName = $this->getTable();
-                    $sql = str_replace('{table}', $tableName, $sql);
-                    $this->execute($sql);
-                }
+        $tableName = $this->getTable();
+        for ($v = $fromVersion; $v < $toVersion; $v++) {
+            $nextKey = "{$v}_" . ($v + 1);
+            if (!isset($allUpgradeSql[$nextKey])) {
+                throw new \RuntimeException("Missing upgrade script for version {$v} → " . ($v + 1));
             }
-
-            $this->transactionCommit();
-
-            // 全部成功后，把版本号写入缓存
-            Context::instance()->cache->set($versionKey, $toVersion);
-            Logger::info("Table {$this->getTable()} successfully upgraded to v{$toVersion}");
-
-            return true;
-        } catch (DbExecuteError $e) {
-            Logger::alert("Failed to upgrade table {$this->getTable()}: " . $e->getMessage());
-            $this->transactionRollBack();
-            return false;
+            Logger::info("Executing upgrade from v{$v} to v" . ($v + 1));
+            foreach ($allUpgradeSql[$nextKey] as $sql) {
+                // 支持 {table} 占位符替换，用于分表场景
+                $sql = str_replace('{table}', $tableName, $sql);
+                $this->execute($sql);
+            }
         }
+
+
+        // 全部成功后，把版本号写入缓存
+        Context::instance()->cache->set($versionKey, $toVersion);
+        Logger::info("Table {$this->getTable()} successfully upgraded to v{$toVersion}");
     }
 
     /**
