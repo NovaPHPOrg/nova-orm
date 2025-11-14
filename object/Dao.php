@@ -176,6 +176,9 @@ abstract class Dao
                 }
                 Logger::info("Executing upgrade from v{$v} to v" . ($v + 1));
                 foreach ($allUpgradeSql[$nextKey] as $sql) {
+                    // 支持 {table} 占位符替换，用于分表场景
+                    $tableName = $this->getTable();
+                    $sql = str_replace('{table}', $tableName, $sql);
                     $this->execute($sql);
                 }
             }
@@ -187,7 +190,7 @@ abstract class Dao
             Logger::info("Table {$this->getTable()} successfully upgraded to v{$toVersion}");
 
             return true;
-        } catch (\Throwable $e) {
+        } catch (DbExecuteError $e) {
             Logger::alert("Failed to upgrade table {$this->getTable()}: " . $e->getMessage());
             $this->transactionRollBack();
             return false;
