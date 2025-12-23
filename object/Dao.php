@@ -93,7 +93,7 @@ abstract class Dao
         if (!Context::instance()->isDebug() && $cachedVersion !== null) {
             // 只在版本不一致时进行升级
             if ($cachedVersion < $currentVersion) {
-                 $this->upgradeTable($model, $cachedVersion, $currentVersion, $versionKey);
+                $this->upgradeTable($model, $cachedVersion, $currentVersion, $versionKey);
             }
             return true;
         }
@@ -130,7 +130,7 @@ abstract class Dao
 
         // 表存在，检查是否需要升级
         if ($cachedVersion === null || $cachedVersion < $currentVersion || Context::instance()->isDebug()) {
-             $this->upgradeTable($model, $cachedVersion ?? 1, $currentVersion, $versionKey);
+            $this->upgradeTable($model, $cachedVersion ?? 1, $currentVersion, $versionKey);
         }
 
         return true;
@@ -139,15 +139,15 @@ abstract class Dao
     /**
      * 升级表结构（按版本 +1 顺序执行）
      *
-     * @param Model $model 模型实例，需实现 getUpgradeSql($from, $to)：返回 [
-     *                             "1_2" => [ 'ALTER ...', ... ],
-     *                             "2_3" => [ ... ],
-     *                             …
-     *                             ]
-     * @param int $fromVersion 当前版本（缓存中读到）
-     * @param int $toVersion 目标版本（配置里要求的最新版本）
-     * @param string $versionKey 缓存版本号的键名，用于升级后写入缓存
-     * @return void 是否升级成功
+     * @param  Model          $model       模型实例，需实现 getUpgradeSql($from, $to)：返回 [
+     *                                     "1_2" => [ 'ALTER ...', ... ],
+     *                                     "2_3" => [ ... ],
+     *                                     …
+     *                                     ]
+     * @param  int            $fromVersion 当前版本（缓存中读到）
+     * @param  int            $toVersion   目标版本（配置里要求的最新版本）
+     * @param  string         $versionKey  缓存版本号的键名，用于升级后写入缓存
+     * @return void           是否升级成功
      * @throws DbExecuteError
      */
     public function upgradeTable(Model $model, int $fromVersion, int $toVersion, string $versionKey): void
@@ -179,7 +179,6 @@ abstract class Dao
                 $this->execute($sql);
             }
         }
-
 
         // 全部成功后，把版本号写入缓存
         Context::instance()->cache->set($versionKey, $toVersion);

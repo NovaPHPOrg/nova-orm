@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace nova\plugin\orm\driver;
 
-use nova\plugin\orm\driver\Driver;
+use nova\framework\core\File;
 use nova\plugin\orm\exception\DbConnectError;
 use nova\plugin\orm\object\DbConfig;
 use nova\plugin\orm\object\Model;
 use nova\plugin\orm\object\SqlKey;
-use nova\framework\core\File;
 use PDO;
 use PDOException;
 
@@ -32,7 +31,6 @@ class Sqlite extends Driver
         if ($dbName === '') {
             $dbName = 'database.sqlite';
         }
-
 
         // 绝对路径（含盘符或以分隔符开头）直接使用，否则相对 storage
         // 避免正则分隔符与转义歧义，改用显式字符判断
