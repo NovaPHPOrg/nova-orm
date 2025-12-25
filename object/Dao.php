@@ -351,9 +351,19 @@ abstract class Dao
         if (!$autoUpdate) {
             return (int)$this->insert()->keyValue($kv)->commit();
         } else {
+            // 展平 unique 数组（处理联合唯一键的情况）
+            // getUnique() 可能返回 ['field'] 或 [['field1', 'field2']]
+            $flatUnique = [];
+            foreach ($unique as $item) {
+                if (is_array($item)) {
+                    $flatUnique = array_merge($flatUnique, $item);
+                } else {
+                    $flatUnique[] = $item;
+                }
+            }
 
             $kvKeys = array_keys($kv);
-            $kvKeys = array_diff($kvKeys, $unique);
+            $kvKeys = array_diff($kvKeys, $flatUnique);
 
             return (int)$this->insert(InsertOperation::INSERT_DUPLICATE)->keyValue($kv, $kvKeys)->commit();
         }
