@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace nova\plugin\orm\object;
 
 use nova\framework\core\ArgObject;
+use function nova\framework\dump;
 
 abstract class Model extends ArgObject
 {
@@ -76,7 +77,11 @@ abstract class Model extends ArgObject
     public function onParseType(string $key, mixed &$val, mixed $demo): bool
     {
         if ($this->fromDb && is_string($val) &&  $this->is_serialized($val)) {
-            $val = unserialize($val);
+            try{
+                $val = unserialize($val);
+            }catch (\Throwable $e) {
+                $val = $demo;
+            }
         }
 
         if ($this->fromDb && is_string($demo) && !$this->inNoEscape($key) && is_string($val)) {
