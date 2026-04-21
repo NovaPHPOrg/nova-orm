@@ -538,12 +538,11 @@ abstract class Dao
      * @param  array                         $where
      * @param  int|null                      $start
      * @param  int                           $size
-     * @param  bool                          $page
      * @param  array|string|null             $orderBy
      * @return array
      * @throws DbFieldError|AppExitException
      */
-    public function getAll(?array $fields = [], array $where = [], ?int $start = null, int $size = 10, bool $page = false, array|string $orderBy = null): array
+    public function getAll(?array $fields = [], array $where = [], ?int $start = null, int $size = 10, array|string $orderBy = null, bool $object = true): array
     {
         $ret = [
             "data" => [],
@@ -556,7 +555,7 @@ abstract class Dao
             $fields = [];
         }
         if ($start === null) {
-            $result = $this->select(...$fields)->where($where)->commit();
+            $result = $this->select(...$fields)->where($where)->commit($total,$object);
         } elseif (!empty($orderBy)) {
             $select = $this->select(...$fields)->page($start, $size)->where($where);
 
@@ -568,9 +567,9 @@ abstract class Dao
                 $select->orderBy($orderBy);
             }
 
-            $result = $select->commit($total);
+            $result = $select->commit($total,$object);
         } else {
-            $result = $this->select(...$fields)->page($start, $size)->where($where)->commit($total);
+            $result = $this->select(...$fields)->page($start, $size)->where($where)->commit($total,$object);
         }
 
         $ret['total'] = $total;
