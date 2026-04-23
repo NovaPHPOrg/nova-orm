@@ -555,7 +555,7 @@ abstract class Dao
             $fields = [];
         }
         if ($start === null) {
-            $result = $this->select(...$fields)->where($where)->commit($total,$object);
+            $result = $this->select(...$fields)->where($where)->commit($total, $object);
         } elseif (!empty($orderBy)) {
             $select = $this->select(...$fields)->page($start, $size)->where($where);
 
@@ -567,9 +567,9 @@ abstract class Dao
                 $select->orderBy($orderBy);
             }
 
-            $result = $select->commit($total,$object);
+            $result = $select->commit($total, $object);
         } else {
-            $result = $this->select(...$fields)->page($start, $size)->where($where)->commit($total,$object);
+            $result = $this->select(...$fields)->page($start, $size)->where($where)->commit($total, $object);
         }
 
         $ret['total'] = $total;
