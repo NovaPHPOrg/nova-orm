@@ -542,7 +542,7 @@ abstract class Dao
      * @return array
      * @throws DbFieldError|AppExitException
      */
-    public function getAll(?array $fields = [], array $where = [], ?int $start = null, int $size = 10, array|string $orderBy = null, bool $object = true,string $orderByType = SelectOperation::SORT_DESC): array
+    public function getAll(?array $fields = [], array $where = [], ?int $start = null, int $size = 10, array|string $orderBy = null, bool $object = true, string $orderByType = SelectOperation::SORT_DESC): array
     {
         $ret = [
             "data" => [],
@@ -561,10 +561,10 @@ abstract class Dao
 
             if (is_array($orderBy)) {
                 foreach ($orderBy as $value) {
-                    $select->orderBy($value,$orderByType);
+                    $select->orderBy($value, $orderByType);
                 }
             } else {
-                $select->orderBy($orderBy,$orderByType);
+                $select->orderBy($orderBy, $orderByType);
             }
 
             $result = $select->commit($total, $object);
