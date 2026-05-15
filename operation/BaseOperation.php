@@ -153,7 +153,7 @@ abstract class BaseOperation
 
     /**
      * 设置查询条件
-     * @param  array         $conditions 条件内容，必须是数组,格式如下["name"=>"张三","i > :hello",":hello"=>"hi"," id in (:in)",":in"=>"1,3,4,5"]
+     * @param  array         $conditions 条件内容，必须是数组,格式如下["name"=>"张三","i > :hello",":hello"=>"hi"," id IN (:in)",":in"=>"1,3,4,5"]
      * @return BaseOperation $this
      * @throws DbFieldError
      */
@@ -169,7 +169,7 @@ abstract class BaseOperation
                     throw new DbFieldError("UnSupport Array Condition: " . json_encode($condition), $key);
                 }
                 if (is_int($key)) {
-                    $isMatched = preg_match_all('/in(\s+)?\((\s+)?(:\w+)\)/', strval($condition), $matches);
+                    $isMatched = preg_match_all('/in(\s+)?\((\s+)?(:\w+)\)/i', strval($condition), $matches);
 
                     if ($isMatched) {
                         for ($i = 0; $i < $isMatched; $i++) {
