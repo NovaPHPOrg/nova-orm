@@ -134,8 +134,11 @@ class Db
 
         if (Context::instance()->isDebug()) {
             $logSql = $this->buildRunSQL($sql, $params);
-            $logSql = $this->buildRunSQL($sql, $params);
-            Logger::info("execute $logSql");
+
+            Logger::info("execute $logSql", [
+                'prepared' => $sql,
+                'params' => $params
+            ]);
         }
 
         $GLOBALS['__nova_db_sql_start__'] = microtime(true);
@@ -153,7 +156,7 @@ class Db
 
                 if (!$sth) {
                     throw new DbExecuteError(
-                        sprintf("Sql Prepare Error：%s", $this->highlightSQL($sql)),
+                        sprintf("Sql Prepare Error：%s", $sql),
                         $sql
                     );
                 }
@@ -191,7 +194,7 @@ class Db
                 throw new DbExecuteError(
                     sprintf(
                         "Run Sql Error：\r\n%s\r\n\r\nError Info：%s",
-                        $this->highlightSQL($sql),
+                        $sql,
                         $sth->errorInfo()[2]
                     ),
                     $sql
@@ -228,7 +231,7 @@ class Db
                 throw new DbExecuteError(
                     sprintf(
                         "Run Sql Error：\r\n%s\r\n\r\nError Info：%s",
-                        $this->highlightSQL($sql),
+                        $sql,
                         $exception->getMessage()
                     ),
                     $sql
@@ -240,53 +243,10 @@ class Db
         throw new DbExecuteError(
             sprintf(
                 "Run Sql Error：\r\n%s\r\n\r\nError Info：重连尝试次数已用完",
-                $this->highlightSQL($sql)
+                $sql
             ),
             $sql
         );
-    }
-
-    private function highlightSQL($sql): string
-    {
-
-        // 定义 SQL 关键词列表
-        $keywords = array(
-            'SELECT', 'FROM', 'WHERE', 'AND', 'OR', 'NOT', 'IN', 'BETWEEN', 'LIKE',
-            'IS', 'NULL', 'AS', 'INNER', 'JOIN', 'LEFT', 'RIGHT', 'OUTER', 'ON',
-            'GROUP', 'BY', 'HAVING', 'ORDER', 'LIMIT', 'OFFSET', 'INSERT', 'INTO',
-            'VALUES', 'UPDATE', 'SET', 'DELETE', 'TRUNCATE', 'CREATE', 'TABLE',
-            'ALTER', 'DROP', 'INDEX', 'VIEW', 'GRANT', 'REVOKE', 'UNION', 'ALL',
-            'CASE', 'WHEN', 'THEN', 'ELSE', 'END', 'PRIMARY', 'KEY', 'FOREIGN',
-            'REFERENCES', 'CASCADE', 'CONSTRAINT', "IF", "EXISTS", "NOT", "BIGINT", "LONGTEXT", "DEFAULT", "TEXT", "INT", "TINYINT", "FLOAT", "AUTO_INCREMENT", "CHARSET", "ENGINE"
-            // 可根据需要添加其他关键词
-        );
-
-        // 定义正则表达式模式
-        $pattern = '/\b(' . implode('|', $keywords) . ')\b|(\'[^\']*\'|"[^"]*")|\b(\d+)\b|(:[\w]+)|(`\w+`)|(--.*)/i';
-
-        // 替换操作
-        return preg_replace_callback($pattern, function ($matches) {
-
-            if (!empty($matches[1])) {
-                // 关键词
-                return '<span style="color: blue;">' . $matches[0] . '</span>';
-            } elseif (!empty($matches[2])) {
-                // 字符串值
-                return '<span style="color: green;">' . $matches[0] . '</span>';
-            } elseif (!empty($matches[3])) {
-                // 数字值
-                return '<span style="color: orange;">' . $matches[0] . '</span>';
-            } elseif (!empty($matches[4])) {
-                // 参数绑定
-                return '<span style="color: purple;">' . $matches[0] . '</span>';
-            } elseif (!empty($matches[5])) {
-                // 表名和字段名
-                return '<span style="color: red;">' . $matches[0] . '</span>';
-            } else {
-                // 注释
-                return '<span style="color: gray;">' . $matches[0] . '</span>';
-            }
-        }, $sql);
     }
 
     public function __destruct()
