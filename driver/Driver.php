@@ -72,4 +72,12 @@ abstract class Driver
      * @return int
      */
     abstract public function onInsertModel(int $model): int;
+
+    /**
+     * INSERT 冲突时追加子句（MySQL: ON DUPLICATE KEY UPDATE；SQLite: ON CONFLICT(...) DO UPDATE SET ...）
+     *
+     * @param array $insertColumnNames INSERT 列名顺序（与 VALUES 一致）
+     * @param array $updateColumnNames 发生冲突时需要更新的列名
+     */
+    abstract public function renderInsertOnDuplicateSuffix(array $insertColumnNames, array $updateColumnNames): string;
 }

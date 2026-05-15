@@ -120,6 +120,7 @@ class InsertOperation extends BaseOperation
      */
     public function keys(array $key, ?array $columns = []): InsertOperation
     {
+        $columns = $columns ?? [];
         if ($this->opt['model'] == self::INSERT_DUPLICATE && sizeof($columns) == 0) {
             throw new DbExecuteError("DUPLICATE model must have update columns.");
         }
@@ -129,12 +130,9 @@ class InsertOperation extends BaseOperation
         }
         $value = '(' . rtrim($value, ",") . ')';
         $this->opt['key'] = $value;
-        $update = [];
-        if (is_array($columns) && sizeof($columns) != 0) {
-            foreach ($columns as $k) {
-                $update[] = "`{$k}`" . " = VALUES(" . $k . ')';
-            }
-            $this->opt['columns'] = implode(', ', $update);
+        $this->opt['insert_column_names'] = $key;
+        if ($this->opt['model'] == self::INSERT_DUPLICATE) {
+            $this->opt['update_column_names'] = array_values($columns);
         }
         return $this;
     }
@@ -160,7 +158,10 @@ class InsertOperation extends BaseOperation
                 $sql .= $this->getOpt('INSERT INTO', 'table_name');
                 $sql .= $this->getOpt('', 'key');
                 $sql .= $this->getOpt('VALUES', 'values');
-                $sql .= $this->getOpt('ON DUPLICATE KEY UPDATE', 'columns');
+                $sql .= $this->db->getDriver()->renderInsertOnDuplicateSuffix(
+                    $this->opt['insert_column_names'],
+                    $this->opt['update_column_names']
+                );
                 break;
             case self::INSERT_NORMAL:
                 $sql .= $this->getOpt('INSERT INTO', 'table_name');

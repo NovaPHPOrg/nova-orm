@@ -6,6 +6,7 @@ namespace nova\plugin\orm\driver;
 
 use nova\framework\core\File;
 use nova\plugin\orm\exception\DbConnectError;
+use nova\plugin\orm\exception\DbExecuteError;
 use nova\plugin\orm\object\DbConfig;
 use nova\plugin\orm\object\Model;
 use nova\plugin\orm\object\SqlKey;
@@ -158,5 +159,31 @@ class Sqlite extends Driver
     public function onInsertModel(int $model): int
     {
         return $model;
+    }
+
+    public function renderInsertOnDuplicateSuffix(array $insertColumnNames, array $updateColumnNames): string
+    {
+        $conflict = [];
+        foreach ($insertColumnNames as $col) {
+            if (!in_array($col, $updateColumnNames, true)) {
+                $conflict[] = $col;
+            }
+        }
+        if ($conflict === []) {
+            throw new DbExecuteError(
+                'SQLite upsert requires at least one INSERT column not listed for update (conflict target).'
+            );
+        }
+
+        $quote = static fn (string $id): string => '`' . str_replace('`', '``', $id) . '`';
+
+        $conflictSql = implode(', ', array_map($quote, $conflict));
+        $setParts = [];
+        foreach ($updateColumnNames as $name) {
+            $q = $quote($name);
+            $setParts[] = "{$q} = excluded.{$q}";
+        }
+
+        return ' ON CONFLICT(' . $conflictSql . ') DO UPDATE SET ' . implode(', ', $setParts);
     }
 }

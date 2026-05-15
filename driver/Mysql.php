@@ -159,4 +159,14 @@ class Mysql extends Driver
     {
         return $model;
     }
+
+    public function renderInsertOnDuplicateSuffix(array $insertColumnNames, array $updateColumnNames): string
+    {
+        $parts = [];
+        foreach ($updateColumnNames as $name) {
+            $parts[] = "`{$name}` = VALUES(`{$name}`)";
+        }
+
+        return ' ON DUPLICATE KEY UPDATE ' . implode(', ', $parts);
+    }
 }
