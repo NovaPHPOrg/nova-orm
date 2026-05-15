@@ -80,4 +80,9 @@ abstract class Driver
      * @param array $updateColumnNames 发生冲突时需要更新的列名
      */
     abstract public function renderInsertOnDuplicateSuffix(array $insertColumnNames, array $updateColumnNames): string;
+
+    /**
+     * INSERT IGNORE 语句中表名前的关键字（MySQL: INSERT IGNORE INTO；SQLite: INSERT OR IGNORE INTO）
+     */
+    abstract public function renderInsertIgnoreLead(): string;
 }

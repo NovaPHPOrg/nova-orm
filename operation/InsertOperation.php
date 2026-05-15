@@ -169,7 +169,7 @@ class InsertOperation extends BaseOperation
                 $sql .= $this->getOpt('VALUES', 'values');
                 break;
             case self::INSERT_IGNORE:
-                $sql .= $this->getOpt('INSERT IGNORE INTO', 'table_name');
+                $sql .= $this->getOpt($this->db->getDriver()->renderInsertIgnoreLead(), 'table_name');
                 $sql .= $this->getOpt('', 'key');
                 $sql .= $this->getOpt('VALUES', 'values');
                 break;

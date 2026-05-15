@@ -84,15 +84,21 @@ class Mysql extends Driver
         $sql .= "`$primary`";
         $sql .= ")";
 
-        //设置联合唯一键
-        foreach ($model->getUnique() as $key => $value) {
-            if (is_array($value)) {
-                $sql .= ",  UNIQUE KEY uk_".md5(join("_", $value))."(";
-                $length = floor(764 / count($value));
-                $sql .= "`".join("`($length),`", $value)."`($length)";
-
-                $sql .= ")";
+        // 联合唯一：仅对字符串类列加前缀长度；整型/浮点/布尔不加 (n)，避免非法索引定义
+        foreach ($model->getUnique() as $value) {
+            if (!is_array($value) || $value === []) {
+                continue;
             }
+            $cols = array_values(array_filter($value, 'is_string'));
+            if ($cols === []) {
+                continue;
+            }
+            $n = count($cols);
+            $parts = [];
+            foreach ($cols as $col) {
+                $parts[] = $this->renderMysqlCompositeUniqueIndexColumn($model, $col, $n);
+            }
+            $sql .= ',  UNIQUE KEY uk_' . md5(implode('_', $cols)) . '(' . implode(',', $parts) . ')';
         }
 
         $full = $model->getFullTextKeys();
@@ -168,5 +174,45 @@ class Mysql extends Driver
         }
 
         return ' ON DUPLICATE KEY UPDATE ' . implode(', ', $parts);
+    }
+
+    public function renderInsertIgnoreLead(): string
+    {
+        return 'INSERT IGNORE INTO';
+    }
+
+    /**
+     * 联合唯一索引中的单列片段（整型等不加前缀长度）
+     */
+    private function renderMysqlCompositeUniqueIndexColumn(Model $model, string $column, int $columnCount): string
+    {
+        $sk = $this->sqlKeyForColumn($model, $column);
+        $q = "`{$column}`";
+        if (in_array($sk->type, [SqlKey::TYPE_INT, SqlKey::TYPE_FLOAT, SqlKey::TYPE_BOOLEAN], true)) {
+            return $q;
+        }
+        $prefix = max(1, (int) floor(764 / $columnCount));
+        if ($sk->type === SqlKey::TYPE_TEXT && $sk->length > 0) {
+            $prefix = min($prefix, $sk->length);
+        } elseif ($sk->type === SqlKey::TYPE_TEXT || $sk->type === SqlKey::TYPE_ARRAY) {
+            $prefix = min($prefix, 191);
+        }
+
+        return "{$q}({$prefix})";
+    }
+
+    private function sqlKeyForColumn(Model $model, string $column): SqlKey
+    {
+        $pk = $model->getPrimaryKey();
+        if ($pk->name === $column) {
+            return $pk;
+        }
+        foreach (get_object_vars($model) as $key => $val) {
+            if ($key === $column) {
+                return new SqlKey($key, $val);
+            }
+        }
+
+        return new SqlKey($column, '', false, 191);
     }
 }

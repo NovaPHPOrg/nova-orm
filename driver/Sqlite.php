@@ -51,6 +51,8 @@ class Sqlite extends Driver
             // 基本推荐设置：启用外键、异常错误模式
             $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $this->pdo->exec('PRAGMA foreign_keys = ON');
+            // WAL：读写可并行（多读单写），减少长时间读阻塞写
+            $this->pdo->exec('PRAGMA journal_mode=WAL');
         } catch (PDOException $e) {
             throw new DbConnectError($e->getMessage(), $e->errorInfo, 'Sqlite');
         }
@@ -185,5 +187,10 @@ class Sqlite extends Driver
         }
 
         return ' ON CONFLICT(' . $conflictSql . ') DO UPDATE SET ' . implode(', ', $setParts);
+    }
+
+    public function renderInsertIgnoreLead(): string
+    {
+        return 'INSERT OR IGNORE INTO';
     }
 }

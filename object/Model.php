@@ -117,8 +117,14 @@ abstract class Model extends ArgObject
     }
 
     /**
-     * 获取唯一字段
-     * @return array
+     * 唯一约束声明（建表与 insertModel 自动 upsert 均依赖此结构）
+     *
+     * 约定：
+     * - 单列唯一：`['field']`
+     * - 联合唯一：**必须**写成 `[['a','b']]`；不要写成 `['a','b']`（后者表示两个独立的单列唯一）
+     * - 若存在多个联合唯一且均使用 insertModel(autoUpdate)，SQLite 的冲突列推导可能不适用，需自行构造 insert
+     *
+     * @return array<int, string|array<int, string>>
      */
     public function getUnique(): array
     {

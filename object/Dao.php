@@ -351,8 +351,8 @@ abstract class Dao
         if (!$autoUpdate) {
             return (int)$this->insert()->keyValue($kv)->commit();
         } else {
-            // 展平 unique 数组（处理联合唯一键的情况）
-            // getUnique() 可能返回 ['field'] 或 [['field1', 'field2']]
+            // 展平 unique：用于从「待更新列」中排除键列。多个互不包含的联合唯一全部展平后，
+            // 可能与 SQLite ON CONFLICT 所需单列/单索引列集不一致；见 Model::getUnique() 约定。
             $flatUnique = [];
             foreach ($unique as $item) {
                 if (is_array($item)) {
