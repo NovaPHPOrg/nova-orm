@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace nova\plugin\orm;
 
+use nova\framework\core\Instance;
 use function nova\framework\config;
 
 use nova\framework\core\Context;
@@ -40,19 +41,23 @@ use PDO;
 use PDOException;
 use PDOStatement;
 
-class Db
+class Db extends Instance
 {
     private ?Driver $db = null;
 
     /**
      * 构造函数
-     * @param  DbConfig         $dbFile 数据库配置类
+     * @param DbConfig|null $dbFile 数据库配置类
      * @throws AppExitException
      */
-    public function __construct(DbConfig $dbFile)
+    public function __construct(?DbConfig $dbFile)
     {
         if (!class_exists("PDO")) {
             throw new AppExitException(Response::asText("Please install PDO extend. https://www.php.net/manual/zh/pdo.installation.php"));
+        }
+
+        if ($dbFile === null) {
+            $dbFile = new DbConfig();
         }
 
         $driver = "nova\\plugin\\orm\\driver\\" . ucfirst($dbFile->type);
@@ -67,30 +72,6 @@ class Db
         }
     }
 
-    public static array $instance = []; //一个配置文件对应一个数据库实例
-
-    /**
-     * 使用指定数据库配置初始化数据库连接
-     * @param  DbConfig|null    $dbFile
-     * @return Db
-     * @throws AppExitException
-     */
-    public static function getInstance(?DbConfig $dbFile = null): Db
-    {
-        if ($dbFile === null) {
-            $dbFile = new DbConfig();
-        }
-
-        $hash = $dbFile->hash();
-
-        if (isset(self::$instance[$hash])) {
-            return self::$instance[$hash];
-        }
-
-        $instance = new self($dbFile);
-        self::$instance[$hash] = $instance;
-        return $instance;
-    }
 
     /**
      * 数据表初始化
@@ -101,7 +82,6 @@ class Db
      */
     public function initTable(Dao $dao, Model $model, string $table): void
     {
-
         Logger::Info("create database table : $table ");
         $this->execute($this->db->renderCreateTable($model, $table));
         $dao->onCreateTable();
@@ -134,7 +114,6 @@ class Db
 
         if (Context::instance()->isDebug()) {
             $logSql = $this->buildRunSQL($sql, $params);
-            $logSql = $this->buildRunSQL($sql, $params);
             Logger::info("execute $logSql");
         }
 
@@ -153,8 +132,7 @@ class Db
 
                 if (!$sth) {
                     throw new DbExecuteError(
-                        sprintf("Sql Prepare Error：%s", $this->highlightSQL($sql)),
-                        $sql
+                        sprintf("Sql Prepare Error：%s", $sql),
                     );
                 }
 
@@ -183,15 +161,13 @@ class Db
                         Logger::info("sql run time => ". $t . "ms");
                     }
 
-                    if ($ret !== null) {
-                        return $ret;
-                    }
+                    return $ret;
                 }
 
                 throw new DbExecuteError(
                     sprintf(
                         "Run Sql Error：\r\n%s\r\n\r\nError Info：%s",
-                        $this->highlightSQL($sql),
+                        $sql,
                         $sth->errorInfo()[2]
                     ),
                     $sql
@@ -211,13 +187,9 @@ class Db
                     Logger::warning("尝试 $attempts/$maxRetries: 重新连接数据库，原因: " . $exception->getMessage());
 
                     // 从配置中重新获取数据库配置，创建新的数据库连接
-                    $dbFile = new DbConfig(config('db'));
+                    $dbFile = new DbConfig();
                     $driver = get_class($this->db);
                     $this->db = new $driver($dbFile);
-
-                    // 更新实例缓存
-                    $hash = $dbFile->hash();
-                    self::$instance[$hash] = $this;
 
                     // 等待一段时间后重试
                     usleep(100000 * $attempts); // 100ms, 200ms, 300ms...
@@ -228,7 +200,7 @@ class Db
                 throw new DbExecuteError(
                     sprintf(
                         "Run Sql Error：\r\n%s\r\n\r\nError Info：%s",
-                        $this->highlightSQL($sql),
+                        $sql,
                         $exception->getMessage()
                     ),
                     $sql
@@ -240,53 +212,10 @@ class Db
         throw new DbExecuteError(
             sprintf(
                 "Run Sql Error：\r\n%s\r\n\r\nError Info：重连尝试次数已用完",
-                $this->highlightSQL($sql)
+                $sql
             ),
             $sql
         );
-    }
-
-    private function highlightSQL($sql): string
-    {
-
-        // 定义 SQL 关键词列表
-        $keywords = array(
-            'SELECT', 'FROM', 'WHERE', 'AND', 'OR', 'NOT', 'IN', 'BETWEEN', 'LIKE',
-            'IS', 'NULL', 'AS', 'INNER', 'JOIN', 'LEFT', 'RIGHT', 'OUTER', 'ON',
-            'GROUP', 'BY', 'HAVING', 'ORDER', 'LIMIT', 'OFFSET', 'INSERT', 'INTO',
-            'VALUES', 'UPDATE', 'SET', 'DELETE', 'TRUNCATE', 'CREATE', 'TABLE',
-            'ALTER', 'DROP', 'INDEX', 'VIEW', 'GRANT', 'REVOKE', 'UNION', 'ALL',
-            'CASE', 'WHEN', 'THEN', 'ELSE', 'END', 'PRIMARY', 'KEY', 'FOREIGN',
-            'REFERENCES', 'CASCADE', 'CONSTRAINT', "IF", "EXISTS", "NOT", "BIGINT", "LONGTEXT", "DEFAULT", "TEXT", "INT", "TINYINT", "FLOAT", "AUTO_INCREMENT", "CHARSET", "ENGINE"
-            // 可根据需要添加其他关键词
-        );
-
-        // 定义正则表达式模式
-        $pattern = '/\b(' . implode('|', $keywords) . ')\b|(\'[^\']*\'|"[^"]*")|\b(\d+)\b|(:[\w]+)|(`\w+`)|(--.*)/i';
-
-        // 替换操作
-        return preg_replace_callback($pattern, function ($matches) {
-
-            if (!empty($matches[1])) {
-                // 关键词
-                return '<span style="color: blue;">' . $matches[0] . '</span>';
-            } elseif (!empty($matches[2])) {
-                // 字符串值
-                return '<span style="color: green;">' . $matches[0] . '</span>';
-            } elseif (!empty($matches[3])) {
-                // 数字值
-                return '<span style="color: orange;">' . $matches[0] . '</span>';
-            } elseif (!empty($matches[4])) {
-                // 参数绑定
-                return '<span style="color: purple;">' . $matches[0] . '</span>';
-            } elseif (!empty($matches[5])) {
-                // 表名和字段名
-                return '<span style="color: red;">' . $matches[0] . '</span>';
-            } else {
-                // 注释
-                return '<span style="color: gray;">' . $matches[0] . '</span>';
-            }
-        }, $sql);
     }
 
     public function __destruct()

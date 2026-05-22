@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace nova\plugin\orm\object;
 
 use nova\framework\core\Context;
+use nova\framework\core\Instance;
 use nova\framework\core\Logger;
 
 use nova\framework\exception\AppExitException;
@@ -38,30 +39,24 @@ use nova\plugin\orm\operation\UpdateOperation;
 use PDOStatement;
 use Throwable;
 
-abstract class Dao
+abstract class Dao extends Instance
 {
     protected ?Db $db = null;
     protected ?string $model = null;//具体的模型
     protected string $table = "";
-    private ?string $child = null;
     protected ?string $user_key = null;
 
     /**
-     * @param string|null $model 指定具体模型
+     * @param null $user_key
      */
-    public function __construct(string $model = null, string $child = null, $user_key = null)
+    public function __construct($user_key = null)
     {
         $this->user_key = $user_key;
         $this->dbInit();
 
-        if (!empty($model)) {
-            $this->model = $model;
-        } elseif (!empty($child)) {
-            $class = str_replace(["dao", "Dao"], ["model", "Model"], $child);
-            $this->child = $child;
-            if (class_exists($class)) {
-                $this->model = $class;
-            }
+        $class = str_replace(["dao", "Dao"], ["model", "Model"], $this::class);
+        if (class_exists($class)) {
+            $this->model = $class;
         }
         $this->initTable();
     }
@@ -123,7 +118,7 @@ abstract class Dao
                 Logger::info("Initialize table {$table}: ");
                 return true;
             } catch (Throwable $e) {
-                Logger::alert("Failed to initialize table {$table}: " . $e->getMessage(), $e->getTrace());
+                Logger::error("Failed to initialize table {$table}: " . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
                 return false;
             }
         }
@@ -193,24 +188,6 @@ abstract class Dao
     protected function dbInit(?DbConfig $dbFile = null): void
     {
         $this->db = Db::getInstance($dbFile);
-    }
-
-    private static $instances = [];
-
-    /**
-     * 获取数据库实例
-     * @return $this
-     */
-    public static function getInstance($user_key = null): Dao
-    {
-        $cls = get_called_class();
-        $key = $cls.$user_key;
-        $instance = self::$instances[$key] ?? null;
-        if (empty($instance)) {
-            $instance = new static(null, $cls, $user_key);
-            self::$instances[$key] = $instance;
-        }
-        return $instance;
     }
 
     /**
