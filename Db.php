@@ -81,7 +81,7 @@ class Db
             $dbFile = new DbConfig();
         }
 
-        $hash = $dbFile->hash();
+        $hash = $dbFile->__toString();
 
         if (isset(self::$instance[$hash])) {
             return self::$instance[$hash];
@@ -219,7 +219,7 @@ class Db
                     $this->db = new $driver($dbFile);
 
                     // 更新实例缓存
-                    $hash = $dbFile->hash();
+                    $hash = $dbFile->__toString();
                     self::$instance[$hash] = $this;
 
                     // 等待一段时间后重试
