@@ -99,7 +99,8 @@ abstract class Dao extends Instance
 
         // 调试模式或无缓存时，检查表是否存在
         try {
-            $result = $this->db->getDriver()->getDbConnect()->query(/** @lang text */ "SELECT count(*) FROM `{$table}` LIMIT 1");
+            $quotedTable = $this->db->getDriver()->quoteIdentifier($table);
+            $result = $this->db->getDriver()->getDbConnect()->query(/** @lang text */ "SELECT count(*) FROM {$quotedTable} LIMIT 1");
             // 对于部分驱动（如 SQLite），SELECT 的 rowCount() 可能返回 0。
             // 只要查询未抛出异常，即可认为表已存在。
             $table_exist = $result instanceof PDOStatement;
@@ -113,7 +114,7 @@ abstract class Dao extends Instance
         // 表不存在，需要创建
         if (!$table_exist) {
             try {
-                $this->db->initTable($this, $model, trim($table, '`'));
+                $this->db->initTable($this, $model, $table);
                 $cache->set($versionKey, $currentVersion);
                 Logger::info("Initialize table {$table}: ");
                 return true;
@@ -277,7 +278,7 @@ abstract class Dao extends Instance
      */
     public function dropTable(): int|array
     {
-        return $this->db->execute("DROP TABLE IF EXISTS `{$this->getTable()}`");
+        return $this->db->execute($this->db->getDriver()->renderDropTable($this->getTable()));
     }
 
     /**

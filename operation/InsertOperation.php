@@ -125,8 +125,9 @@ class InsertOperation extends BaseOperation
             throw new DbExecuteError("DUPLICATE model must have update columns.");
         }
         $value = '';
+        $driver = $this->db->getDriver();
         foreach ($key as $v) {
-            $value .= "`{$v}`,";
+            $value .= $driver->quoteIdentifier($v) . ',';
         }
         $value = '(' . rtrim($value, ",") . ')';
         $this->opt['key'] = $value;
@@ -172,6 +173,7 @@ class InsertOperation extends BaseOperation
                 $sql .= $this->getOpt($this->db->getDriver()->renderInsertIgnoreLead(), 'table_name');
                 $sql .= $this->getOpt('', 'key');
                 $sql .= $this->getOpt('VALUES', 'values');
+                $sql .= $this->db->getDriver()->renderInsertIgnoreSuffix();
                 break;
         }
         $this->transferSql = $sql . ";";

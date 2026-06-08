@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace nova\plugin\orm\object;
 
+use nova\plugin\orm\driver\Driver;
 use nova\plugin\orm\exception\DbFieldError;
 
 class Field
@@ -60,12 +61,19 @@ class Field
      * 转换为string类型
      * @return string
      */
-    public function toString(): string
+    public function toString(?Driver $driver = null): string
     {
         if (empty($this->fields)) {
             return "*";
         }
-        return "`".implode("`,`", $this->fields)."`";
+        if ($driver === null) {
+            return "`".implode("`,`", $this->fields)."`";
+        }
+
+        return implode(',', array_map(
+            fn (string $field): string => $driver->quoteQualifiedIdentifier($field),
+            $this->fields
+        ));
     }
 
     /**

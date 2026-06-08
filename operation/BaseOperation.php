@@ -68,9 +68,10 @@ abstract class BaseOperation
 
         $this->tables = $names;
         $table = "";
+        $driver = $this->db->getDriver();
         foreach ($names as $name) {
             if (!empty($name)) {
-                $table .= '`' . $name . '`,';
+                $table .= $driver->quoteIdentifier($name) . ',';
             }
 
         }
@@ -224,7 +225,7 @@ abstract class BaseOperation
                 if (!str_starts_with($key, ":")) {
                     unset($conditions[$keyRaw]);
                     $conditions[":_WHERE_" . $key] = $condition;
-                    $join[] = "`" . str_replace('.', '`.`', $keyRaw) . "` = :_WHERE_" . $key;
+                    $join[] = $this->db->getDriver()->quoteQualifiedIdentifier($keyRaw) . " = :_WHERE_" . $key;
                 }
 
             }

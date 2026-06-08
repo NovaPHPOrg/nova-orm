@@ -62,7 +62,7 @@ class UpdateOperation extends BaseOperation
                 continue;
             }
             $values[":_UPDATE_" . $k] = $v;
-            $set .= "`{$k}` = " . ":_UPDATE_" . $k . ',';
+            $set .= $this->db->getDriver()->quoteIdentifier($k) . " = " . ":_UPDATE_" . $k . ',';
         }
         $set = rtrim($set, ",");
         $this->bind_param += $values;

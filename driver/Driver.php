@@ -85,4 +85,50 @@ abstract class Driver
      * INSERT IGNORE 语句中表名前的关键字（MySQL: INSERT IGNORE INTO；SQLite: INSERT OR IGNORE INTO）
      */
     abstract public function renderInsertIgnoreLead(): string;
+
+    /**
+     * INSERT IGNORE 语句后缀（PostgreSQL: ON CONFLICT DO NOTHING）
+     */
+    public function renderInsertIgnoreSuffix(): string
+    {
+        return '';
+    }
+
+    /**
+     * 引用单个标识符（表名、列名）
+     */
+    public function quoteIdentifier(string $name): string
+    {
+        return '`' . str_replace('`', '``', $name) . '`';
+    }
+
+    /**
+     * 引用带点号的标识符（如 table.column）
+     */
+    public function quoteQualifiedIdentifier(string $name): string
+    {
+        $parts = explode('.', $name);
+
+        return implode('.', array_map(fn (string $part): string => $this->quoteIdentifier($part), $parts));
+    }
+
+    /**
+     * 渲染 LIMIT 子句（MySQL: LIMIT offset,count）
+     */
+    public function renderLimitClause(?string $limit): string
+    {
+        if ($limit === null || $limit === '') {
+            return '';
+        }
+
+        return ' LIMIT ' . $limit . ' ';
+    }
+
+    /**
+     * 渲染 DROP TABLE 语句
+     */
+    public function renderDropTable(string $table): string
+    {
+        return 'DROP TABLE IF EXISTS ' . $this->quoteIdentifier($table);
+    }
 }

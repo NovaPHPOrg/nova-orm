@@ -45,7 +45,7 @@ class SelectOperation extends BaseOperation
         $this->opt = [];
         $this->opt['type'] = 'select';
         $this->opt['distinct'] = '';
-        $this->opt['field'] = (isset($field[0]) && $field[0] instanceof Field) ? $field[0]->toString() : (new Field(...$field))->toString();
+        $this->opt['field'] = (isset($field[0]) && $field[0] instanceof Field) ? $field[0] : new Field(...$field);
         $this->bind_param = [];
     }
 
@@ -64,9 +64,9 @@ class SelectOperation extends BaseOperation
             $type = self::SORT_DESC;
         }
         if (isset($this->opt['order']) && $this->opt['order'] !== "") {
-            $this->opt['order'] = $this->opt['order'] . "," . $string . " " . $type;
+            $this->opt['order'] = $this->opt['order'] . "," . $this->db->getDriver()->quoteQualifiedIdentifier($string) . " " . $type;
         } else {
-            $this->opt['order'] = $string . " " . $type;
+            $this->opt['order'] = $this->db->getDriver()->quoteQualifiedIdentifier($string) . " " . $type;
         }
 
         return $this;
@@ -83,7 +83,7 @@ class SelectOperation extends BaseOperation
         if (!Field::isName($string)) {
             throw new DbFieldError("Disallowed field name => $string", $string);
         }
-        $this->opt['group_by'] = $string;
+        $this->opt['group_by'] = $this->db->getDriver()->quoteQualifiedIdentifier($string);
         return $this;
     }
 
@@ -208,8 +208,9 @@ class SelectOperation extends BaseOperation
             $this->where($conditions);
         }
 
+        $quotedParam = $this->db->getDriver()->quoteQualifiedIdentifier($param);
         $sql = /** @lang text */
-            "SELECT SUM($param) AS M_COUNTER FROM " . $this->opt['table_name'] . " " . (empty($conditions) ? '' : 'where ' . $this->opt['where']);
+            "SELECT SUM({$quotedParam}) AS M_COUNTER FROM " . $this->opt['table_name'] . " " . (empty($conditions) ? '' : 'where ' . $this->opt['where']);
         try {
             $this->transferSql = $sql;
             $count = $this->__commit(true);
@@ -234,13 +235,16 @@ class SelectOperation extends BaseOperation
      */
     protected function translateSql(): void
     {
+        $field = $this->opt['field'];
+        $fieldSql = $field instanceof Field ? $field->toString($this->db->getDriver()) : $field;
+
         $sql = $this->getOpt('SELECT', 'distinct');
-        $sql .= $this->getOpt('', 'field');
+        $sql .= ' ' . $fieldSql . ' ';
         $sql .= $this->getOpt('FROM', 'table_name');
         $sql .= $this->getOpt('WHERE', 'where');
         $sql .= $this->getOpt('ORDER BY', 'order');
         $sql .= $this->getOpt('GROUP BY', 'group_by');
-        $sql .= $this->getOpt('LIMIT', 'limit');
+        $sql .= $this->db->getDriver()->renderLimitClause($this->opt['limit'] ?? null);
         $this->transferSql = $sql . ";";
     }
 

@@ -171,6 +171,40 @@ class Postgresql extends Driver
     }
 
     /**
+     * INSERT IGNORE 语句后缀
+     */
+    public function renderInsertIgnoreSuffix(): string
+    {
+        return ' ON CONFLICT DO NOTHING';
+    }
+
+    /**
+     * 引用单个标识符
+     */
+    public function quoteIdentifier(string $name): string
+    {
+        return '"' . str_replace('"', '""', $name) . '"';
+    }
+
+    /**
+     * 渲染 LIMIT 子句（PostgreSQL: LIMIT count OFFSET offset）
+     */
+    public function renderLimitClause(?string $limit): string
+    {
+        if ($limit === null || $limit === '') {
+            return '';
+        }
+
+        if (str_contains($limit, ',')) {
+            [$offset, $count] = array_map('trim', explode(',', $limit, 2));
+
+            return ' LIMIT ' . $count . ' OFFSET ' . $offset . ' ';
+        }
+
+        return ' LIMIT ' . $limit . ' ';
+    }
+
+    /**
      * 清空数据表
      * 注意：PostgreSQL 的 TRUNCATE 不能在有外键关联的表上使用，除非指定 CASCADE
      */
@@ -197,16 +231,23 @@ class Postgresql extends Driver
      */
     public function renderInsertOnDuplicateSuffix(array $insertColumnNames, array $updateColumnNames): string
     {
-        // PostgreSQL 的 ON CONFLICT 需要指定冲突的目标列
-        // 如果没有指定更新列，则使用所有插入列作为冲突目标
-        $conflictColumns = $insertColumnNames;
+        $conflict = array_values(array_diff($insertColumnNames, $updateColumnNames));
+        if ($conflict === []) {
+            $conflict = $insertColumnNames;
+        }
+
+        $conflictSql = implode(', ', array_map(
+            fn (string $name): string => $this->quoteIdentifier($name),
+            $conflict
+        ));
 
         $parts = [];
         foreach ($updateColumnNames as $name) {
-            $parts[] = '"' . $name . '" = EXCLUDED."' . $name . '"';
+            $quoted = $this->quoteIdentifier($name);
+            $parts[] = "{$quoted} = EXCLUDED.{$quoted}";
         }
 
-        return ' ON CONFLICT DO UPDATE SET ' . implode(', ', $parts);
+        return ' ON CONFLICT (' . $conflictSql . ') DO UPDATE SET ' . implode(', ', $parts);
     }
 
     /**
