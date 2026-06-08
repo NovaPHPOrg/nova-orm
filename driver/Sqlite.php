@@ -54,7 +54,7 @@ class Sqlite extends Driver
             // WAL：读写可并行（多读单写），减少长时间读阻塞写
             $this->pdo->exec('PRAGMA journal_mode=WAL');
         } catch (PDOException $e) {
-            throw new DbConnectError($e->getMessage(), $e->errorInfo, 'Sqlite');
+            throw new DbConnectError($e->getMessage(), $e->errorInfo ?? [], 'Sqlite');
         }
     }
 

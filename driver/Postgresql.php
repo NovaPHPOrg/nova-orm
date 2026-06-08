@@ -54,10 +54,14 @@ class Postgresql extends Driver
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 ]
             );
-            // 设置字符集
-            $this->pdo->exec("SET NAMES '{$this->dbFile->charset}'");
+            // PostgreSQL 使用 client_encoding，不支持 MySQL 的 SET NAMES / utf8mb4
+            $encoding = match (strtolower($this->dbFile->charset)) {
+                'utf8', 'utf8mb4', 'utf-8' => 'UTF8',
+                default => strtoupper($this->dbFile->charset),
+            };
+            $this->pdo->exec("SET client_encoding TO '{$encoding}'");
         } catch (PDOException $e) {
-            throw new DbConnectError($e->getMessage(), $e->errorInfo, 'Postgresql');
+            throw new DbConnectError($e->getMessage(), $e->errorInfo ?? [], 'Postgresql');
         }
     }
 

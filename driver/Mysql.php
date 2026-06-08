@@ -55,7 +55,7 @@ class Mysql extends Driver
                 ]
             );
         } catch (PDOException $e) {
-            throw new DbConnectError($e->getMessage(), $e->errorInfo, "Mysql");
+            throw new DbConnectError($e->getMessage(), $e->errorInfo ?? [], "Mysql");
         }
 
     }

@@ -29,10 +29,10 @@ use nova\framework\core\Logger;
 
 class DbConnectError extends exception
 {
-    public function __construct($message, array $error, $tag)
+    public function __construct($message, ?array $error, $tag)
     {
         Logger::error(strip_tags($message));
-        Logger::error("Error info: " . implode(" , ", $error));
+        Logger::error("Error info: " . implode(" , ", $error ?? []));
         parent::__construct($message);
     }
 }
