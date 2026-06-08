@@ -130,14 +130,13 @@ class SelectOperation extends BaseOperation
     {
 
         if (isset($this->opt['start']) && isset($this->opt['count'])) {
-            $sql = 'SELECT COUNT(*) as M_COUNTER ';
+            $sql = 'SELECT COUNT(*) as m_counter ';
             $sql .= $this->getOpt('FROM', 'table_name');
             $sql .= $this->getOpt('WHERE', 'where');
-            $sql .= $this->getOpt('ORDER BY', 'order');
-            $sql .= $this->getOpt('GROUP BY', 'groupBy');
 
             try {
-                $total = $this->db->execute($sql, $this->bind_param, true)[0]['M_COUNTER'];
+                $rows = $this->db->execute($sql, $this->bind_param, true);
+                $total = self::firstScalar($rows);
             } catch (Exception $e) {
                 $total = 0;
             }
@@ -175,10 +174,27 @@ class SelectOperation extends BaseOperation
             $this->where($conditions);
         }
         $sql = /** @lang text */
-            "SELECT COUNT(*) AS M_COUNTER FROM " . $this->opt['table_name'] . "  " . (empty($conditions) ? '' : 'where ' . $this->opt['where']);
+            "SELECT COUNT(*) AS m_counter FROM " . $this->opt['table_name'] . "  " . (empty($conditions) ? '' : 'where ' . $this->opt['where']);
         $this->transferSql = $sql;
         $count = $this->__commit(true);
-        return isset($count[0]['M_COUNTER']) && $count[0]['M_COUNTER'] ? intval($count[0]['M_COUNTER']) : 0;
+
+        return self::firstScalar($count);
+    }
+
+    /**
+     * 读取 SELECT COUNT/SUM(...) 的首行标量，不依赖列别名
+     *
+     * @param array<int, array<string|int, mixed>> $rows
+     */
+    private static function firstScalar(array $rows): int
+    {
+        if ($rows === [] || !isset($rows[0]) || !is_array($rows[0])) {
+            return 0;
+        }
+
+        $value = reset($rows[0]);
+
+        return is_numeric($value) ? (int) $value : 0;
     }
 
     /**
@@ -210,14 +226,14 @@ class SelectOperation extends BaseOperation
 
         $quotedParam = $this->db->getDriver()->quoteQualifiedIdentifier($param);
         $sql = /** @lang text */
-            "SELECT SUM({$quotedParam}) AS M_COUNTER FROM " . $this->opt['table_name'] . " " . (empty($conditions) ? '' : 'where ' . $this->opt['where']);
+            "SELECT SUM({$quotedParam}) AS m_counter FROM " . $this->opt['table_name'] . " " . (empty($conditions) ? '' : 'where ' . $this->opt['where']);
         try {
             $this->transferSql = $sql;
             $count = $this->__commit(true);
         } catch (Exception $e) {
             return 0;
         }
-        return isset($count[0]['M_COUNTER']) && $count[0]['M_COUNTER'] ? intval($count[0]['M_COUNTER']) : 0;
+        return self::firstScalar($count);
     }
 
     /**
