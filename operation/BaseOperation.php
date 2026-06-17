@@ -170,7 +170,8 @@ abstract class BaseOperation
                     throw new DbFieldError("UnSupport Array Condition: " . json_encode($condition), $key);
                 }
                 if (is_int($key)) {
-                    $isMatched = preg_match_all('/in(\s+)?\((\s+)?(:\w+)\)/i', strval($condition), $matches);
+                    $condition = $this->normalizeRawCondition(strval($condition));
+                    $isMatched = preg_match_all('/in(\s+)?\((\s+)?(:\w+)\)/i', $condition, $matches);
 
                     if ($isMatched) {
                         for ($i = 0; $i < $isMatched; $i++) {
@@ -195,7 +196,7 @@ abstract class BaseOperation
                         }
                     }
                     //识别Like语句
-                    $isMatched = preg_match_all('/like\s+([\'"])?(%)?(:[\w]+)(%)?([\'"])?/i', strval($condition), $matches);
+                    $isMatched = preg_match_all('/like\s+([\'"])?(%)?(:[\w]+)(%)?([\'"])?/i', $condition, $matches);
 
                     if ($isMatched) {
                         foreach ($matches[3] as $i => $key2) {
@@ -236,6 +237,24 @@ abstract class BaseOperation
             $this->bind_param += $conditions;
         }
         return $this;
+    }
+
+    /**
+     * 将手写 WHERE 片段里的 MySQL 反引号标识符转为当前驱动可识别的引用形式（PostgreSQL 等）。
+     */
+    private function normalizeRawCondition(string $condition): string
+    {
+        if (!str_contains($condition, '`')) {
+            return $condition;
+        }
+
+        $driver = $this->db->getDriver();
+
+        return preg_replace_callback(
+            '/`([^`]+)`/',
+            static fn(array $matches): string => $driver->quoteQualifiedIdentifier($matches[1]),
+            $condition,
+        ) ?? $condition;
     }
 
     /**
