@@ -27,7 +27,6 @@ namespace nova\plugin\orm\object;
 use nova\framework\core\Context;
 use nova\framework\core\Instance;
 use nova\framework\core\Logger;
-
 use nova\framework\exception\AppExitException;
 use nova\plugin\orm\Db;
 use nova\plugin\orm\exception\DbExecuteError;
@@ -37,6 +36,7 @@ use nova\plugin\orm\operation\InsertOperation;
 use nova\plugin\orm\operation\SelectOperation;
 use nova\plugin\orm\operation\UpdateOperation;
 use PDOStatement;
+use RuntimeException;
 use Throwable;
 
 abstract class Dao extends Instance
@@ -166,7 +166,7 @@ abstract class Dao extends Instance
         for ($v = $fromVersion; $v < $toVersion; $v++) {
             $nextKey = "{$v}_" . ($v + 1);
             if (!isset($allUpgradeSql[$nextKey])) {
-                throw new \RuntimeException("Missing upgrade script for version {$v} → " . ($v + 1));
+                throw new RuntimeException("Missing upgrade script for version {$v} → " . ($v + 1));
             }
             Logger::info("Executing upgrade from v{$v} to v" . ($v + 1));
             foreach ($allUpgradeSql[$nextKey] as $sql) {

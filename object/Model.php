@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace nova\plugin\orm\object;
 
 use nova\framework\core\ArgObject;
+use Throwable;
 
 abstract class Model extends ArgObject
 {
@@ -78,7 +79,7 @@ abstract class Model extends ArgObject
         if ($this->fromDb && is_string($val) &&  $this->is_serialized($val)) {
             try {
                 $val = unserialize($val);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $val = $demo;
             }
         }
