@@ -170,8 +170,10 @@ abstract class Dao extends Instance
             }
             Logger::info("Executing upgrade from v{$v} to v" . ($v + 1));
             foreach ($allUpgradeSql[$nextKey] as $sql) {
-                // 支持 {table} 占位符替换，用于分表场景
-                $sql = str_replace('{table}', $tableName, $sql);
+                $driver = $this->db->getDriver();
+                // 支持 {table} 占位符替换，用于分表场景；按驱动引用表名（如 PG/MySQL 的 user 为保留字）
+                $sql = str_replace('{table}', $driver->quoteIdentifier($tableName), $sql);
+                $sql = $driver->normalizeUpgradeSql($sql);
                 $this->execute($sql);
             }
         }

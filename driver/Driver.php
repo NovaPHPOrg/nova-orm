@@ -131,4 +131,21 @@ abstract class Driver
     {
         return 'DROP TABLE IF EXISTS ' . $this->quoteIdentifier($table);
     }
+
+    /**
+     * 将 Model::getUpgradeSql() 中的 MySQL 风格标识符转为当前驱动可识别的形式。
+     * 子类可覆盖以处理方言差异（如 PostgreSQL 不支持 ADD COLUMN ... COMMENT）。
+     */
+    public function normalizeUpgradeSql(string $sql): string
+    {
+        if (!str_contains($sql, '`')) {
+            return $sql;
+        }
+
+        return preg_replace_callback(
+            '/`([^`]+)`/',
+            fn(array $matches): string => $this->quoteIdentifier($matches[1]),
+            $sql,
+        ) ?? $sql;
+    }
 }

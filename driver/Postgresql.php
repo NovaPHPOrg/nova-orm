@@ -258,4 +258,14 @@ class Postgresql extends Driver
     {
         return 'INSERT INTO';
     }
+
+    /**
+     * PostgreSQL 不支持 ALTER TABLE ... ADD COLUMN ... COMMENT，需剥离 MySQL 内联注释。
+     */
+    public function normalizeUpgradeSql(string $sql): string
+    {
+        $sql = parent::normalizeUpgradeSql($sql);
+
+        return preg_replace("/\s+COMMENT\s+'(?:[^'\\\\]|\\\\.)*'/i", '', $sql) ?? $sql;
+    }
 }
