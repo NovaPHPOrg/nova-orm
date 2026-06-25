@@ -252,7 +252,7 @@ abstract class BaseOperation
 
         return preg_replace_callback(
             '/`([^`]+)`/',
-            static fn(array $matches): string => $driver->quoteQualifiedIdentifier($matches[1]),
+            static fn (array $matches): string => $driver->quoteQualifiedIdentifier($matches[1]),
             $condition,
         ) ?? $condition;
     }

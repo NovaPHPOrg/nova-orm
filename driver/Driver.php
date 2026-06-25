@@ -144,7 +144,7 @@ abstract class Driver
 
         return preg_replace_callback(
             '/`([^`]+)`/',
-            fn(array $matches): string => $this->quoteIdentifier($matches[1]),
+            fn (array $matches): string => $this->quoteIdentifier($matches[1]),
             $sql,
         ) ?? $sql;
     }
