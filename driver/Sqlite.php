@@ -47,12 +47,18 @@ class Sqlite extends Driver
         File::mkDir($parentDir);
 
         try {
-            $this->pdo = new PDO('sqlite:' . $dbPath);
+            $this->pdo = new PDO('sqlite:' . $dbPath, null, null, [
+                PDO::ATTR_TIMEOUT => 5.0
+            ]);
             // 基本推荐设置：启用外键、异常错误模式
             $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $this->pdo->exec('PRAGMA foreign_keys = ON');
             // WAL：读写可并行（多读单写），减少长时间读阻塞写
             $this->pdo->exec('PRAGMA journal_mode=WAL');
+            // NORMAL：在 WAL 模式下大幅提升写入性能，且不会损坏数据库
+            $this->pdo->exec('PRAGMA synchronous = NORMAL');
+            // 确保忙等待时间生效（5000毫秒）
+            $this->pdo->exec('PRAGMA busy_timeout = 5000');
         } catch (PDOException $e) {
             throw new DbConnectError($e->getMessage(), $e->errorInfo ?? [], 'Sqlite');
         }
