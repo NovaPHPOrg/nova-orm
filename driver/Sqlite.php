@@ -48,7 +48,7 @@ class Sqlite extends Driver
 
         try {
             $this->pdo = new PDO('sqlite:' . $dbPath, null, null, [
-                PDO::ATTR_TIMEOUT => 5.0
+                PDO::ATTR_TIMEOUT => 5,
             ]);
             // 基本推荐设置：启用外键、异常错误模式
             $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
