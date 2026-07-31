@@ -84,37 +84,14 @@ abstract class Model extends ArgObject
             }
         }
 
-        if ($this->fromDb && is_string($demo) && !$this->inNoEscape($key) && is_string($val)) {
-            if (empty($val)) {
-                $val = $demo;
-            }
-            $val = htmlspecialchars($val);
-        }
+        // 字符串保持原文。HTML 转义是输出边界的事（模板 {$var} / JS escapeHtml），
+        // 不在 ORM 里做——否则 API/Agent/二次拼 HTML 全被 &quot; 污染。
 
         if (!$this->fromDb && (is_array($demo) || is_object($demo)) && is_string($val)) {
             $val = json_decode($val, true);
         }
 
         return parent::onParseType($key, $val, $demo);
-    }
-
-    /**
-     * 是否为不不要转义的字段
-     * @param       $key
-     * @return bool
-     */
-    private function inNoEscape($key): bool
-    {
-        return in_array($key, $this->getNoEscape());
-    }
-
-    /**
-     * 获取不需要转义的字段
-     * @return array
-     */
-    public function getNoEscape(): array
-    {
-        return [];
     }
 
     /**
