@@ -130,12 +130,8 @@ class SelectOperation extends BaseOperation
     {
 
         if (isset($this->opt['start']) && isset($this->opt['count'])) {
-            $sql = 'SELECT COUNT(*) as m_counter ';
-            $sql .= $this->getOpt('FROM', 'table_name');
-            $sql .= $this->getOpt('WHERE', 'where');
-
             try {
-                $rows = $this->db->execute($sql, $this->bind_param, true);
+                $rows = $this->db->execute($this->buildCountSql(), $this->bind_param, true);
                 $total = self::firstScalar($rows);
             } catch (Exception $e) {
                 $total = 0;
@@ -173,8 +169,13 @@ class SelectOperation extends BaseOperation
         if (!empty($conditions)) {
             $this->where($conditions);
         }
-        $sql = /** @lang text */
-            "SELECT COUNT(*) AS m_counter FROM " . $this->opt['table_name'] . "  " . (empty($conditions) ? '' : 'where ' . $this->opt['where']);
+        $hasWhere = !empty($conditions) || !empty($this->opt['where']);
+        if (($this->opt['distinct'] ?? '') === 'DISTINCT') {
+            $sql = $this->buildCountSql();
+        } else {
+            $sql = /** @lang text */
+                "SELECT COUNT(*) AS m_counter FROM " . $this->opt['table_name'] . ($hasWhere ? ' WHERE ' . $this->opt['where'] : '');
+        }
         $this->transferSql = $sql;
         $count = $this->__commit(true);
 
@@ -251,17 +252,39 @@ class SelectOperation extends BaseOperation
      */
     protected function translateSql(): void
     {
-        $field = $this->opt['field'];
-        $fieldSql = $field instanceof Field ? $field->toString($this->db->getDriver()) : $field;
-
         $sql = $this->getOpt('SELECT', 'distinct');
-        $sql .= ' ' . $fieldSql . ' ';
+        $sql .= ' ' . $this->renderFieldSql() . ' ';
         $sql .= $this->getOpt('FROM', 'table_name');
         $sql .= $this->getOpt('WHERE', 'where');
         $sql .= $this->getOpt('ORDER BY', 'order');
         $sql .= $this->getOpt('GROUP BY', 'group_by');
         $sql .= $this->db->getDriver()->renderLimitClause($this->opt['limit'] ?? null);
         $this->transferSql = $sql . ";";
+    }
+
+    private function renderFieldSql(): string
+    {
+        $field = $this->opt['field'];
+
+        return $field instanceof Field ? $field->toString($this->db->getDriver()) : $field;
+    }
+
+    private function buildCountSql(): string
+    {
+        if (($this->opt['distinct'] ?? '') === 'DISTINCT') {
+            $sql = 'SELECT COUNT(*) AS m_counter FROM (SELECT DISTINCT ' . $this->renderFieldSql();
+            $sql .= $this->getOpt('FROM', 'table_name');
+            $sql .= $this->getOpt('WHERE', 'where');
+            $sql .= ') AS __orm_count';
+
+            return $sql;
+        }
+
+        $sql = 'SELECT COUNT(*) AS m_counter ';
+        $sql .= $this->getOpt('FROM', 'table_name');
+        $sql .= $this->getOpt('WHERE', 'where');
+
+        return $sql;
     }
 
 }
