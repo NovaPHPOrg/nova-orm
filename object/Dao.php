@@ -93,10 +93,6 @@ abstract class Dao extends Instance
             return true;
         }
 
-        if ($cachedVersion == null) {
-            $cachedVersion = $currentVersion;
-        }
-
         // 调试模式或无缓存时，检查表是否存在
         try {
             $quotedTable = $this->db->getDriver()->quoteIdentifier($table);
@@ -124,12 +120,41 @@ abstract class Dao extends Instance
             }
         }
 
-        // 表存在，检查是否需要升级
-        if ($cachedVersion === null || $cachedVersion < $currentVersion || Context::instance()->isDebug()) {
-            $this->upgradeTable($model, $cachedVersion ?? 1, $currentVersion, $versionKey);
+        // 表存在但版本缓存丢了（runtime 被清、重新部署）：无从得知表停在哪个版本，只能对照模型核对字段
+        if ($cachedVersion === null) {
+            $this->syncColumns($model, $table);
+            $cache->set($versionKey, $currentVersion);
+            return true;
         }
 
+        $this->upgradeTable($model, $cachedVersion, $currentVersion, $versionKey);
         return true;
+    }
+
+    /**
+     * 按模型补齐表中缺失的列，定义与建表时一致。
+     *
+     * 只能补列：升级脚本里的改名、建索引、数据迁移在版本未知时无法安全重放。
+     * 不带 UNIQUE：SQLite 不允许 ADD COLUMN 加唯一约束，已有数据也可能冲突。
+     */
+    private function syncColumns(Model $model, string $table): void
+    {
+        $driver = $this->db->getDriver();
+        $quotedTable = $driver->quoteIdentifier($table);
+        $stmt = $driver->getDbConnect()->query("SELECT * FROM {$quotedTable} LIMIT 0");
+
+        $existing = [];
+        for ($i = 0; $i < $stmt->columnCount(); $i++) {
+            $existing[strtolower($stmt->getColumnMeta($i)['name'])] = true;
+        }
+
+        foreach (get_object_vars($model) as $key => $value) {
+            if (isset($existing[strtolower($key)])) {
+                continue;
+            }
+            Logger::warning("Table {$table} missing column {$key}, adding it");
+            $this->execute("ALTER TABLE {$quotedTable} ADD COLUMN " . $driver->renderKey(new SqlKey($key, $value)));
+        }
     }
 
     /**
