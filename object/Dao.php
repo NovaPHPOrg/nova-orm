@@ -199,7 +199,11 @@ abstract class Dao extends Instance
                 // 支持 {table} 占位符替换，用于分表场景；按驱动引用表名（如 PG/MySQL 的 user 为保留字）
                 $sql = str_replace('{table}', $driver->quoteIdentifier($tableName), $sql);
                 $sql = $driver->normalizeUpgradeSql($sql);
-                $this->execute($sql);
+                try {
+                    $this->execute($sql);
+                } catch (DbExecuteError $dbExecuteError) {
+
+                }
             }
         }
 
